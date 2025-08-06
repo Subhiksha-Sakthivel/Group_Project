@@ -78,7 +78,7 @@ export default function UserAddressCard() {
                 fill=""
               />
             </svg>
-            Edit
+           
           </button>
         </div>
       </div>

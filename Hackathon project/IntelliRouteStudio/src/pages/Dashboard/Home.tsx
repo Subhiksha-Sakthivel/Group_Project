@@ -17,24 +17,24 @@ export default function Home() {
         <div className="col-span-12 space-y-6 xl:col-span-7">
           <EcommerceMetrics />
 
-          <MonthlySalesChart />
+          {/* <MonthlySalesChart /> */}
         </div>
 
-        <div className="col-span-12 xl:col-span-5">
+        {/* <div className="col-span-12 xl:col-span-5">
           <MonthlyTarget />
-        </div>
+        </div> */}
 
         <div className="col-span-12">
           <StatisticsChart />
         </div>
 
-        <div className="col-span-12 xl:col-span-5">
+        {/* <div className="col-span-12 xl:col-span-5">
           <DemographicCard />
-        </div>
+        </div> */}
 
-        <div className="col-span-12 xl:col-span-7">
+        {/* <div className="col-span-12 xl:col-span-7">
           <RecentOrders />
-        </div>
+        </div> */}
       </div>
     </>
   );

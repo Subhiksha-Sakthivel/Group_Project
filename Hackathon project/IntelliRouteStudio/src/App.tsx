@@ -30,7 +30,7 @@ export default function App() {
             <Route index path="/" element={<Home />} />
 
             {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/settings" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
 
@@ -38,7 +38,7 @@ export default function App() {
             <Route path="/form-elements" element={<FormElements />} />
 
             {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
+            <Route path="/mappings" element={<BasicTables />} />
 
             {/* Ui Elements */}
             <Route path="/alerts" element={<Alerts />} />
