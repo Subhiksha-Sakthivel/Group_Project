@@ -103,12 +103,12 @@ export default function StatisticsChart() {
 
   const series = [
     {
-      name: "Sales",
-      data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
+      name: "SOAP Server Hits",
+      data: [100, 95, 80, 70, 65, 60, 50, 30, 25, 20, 15, 10],
     },
     {
-      name: "Revenue",
-      data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+      name: "REST Server Hits",
+      data: [10, 15, 20, 25, 30, 50, 60, 65, 70, 80, 95, 100],
     },
   ];
   return (
@@ -116,10 +116,10 @@ export default function StatisticsChart() {
       <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
         <div className="w-full">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Statistics
+            Traffic Distribution
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you’ve set for each month
+            SOAP vs REST Server Hits
           </p>
         </div>
         <div className="flex items-start w-full gap-3 sm:justify-end">
