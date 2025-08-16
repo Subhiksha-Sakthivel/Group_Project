@@ -52,15 +52,15 @@ if (!useMockRepo)
     // AWS DynamoDB configuration (real implementation)
     builder.Services.AddDefaultAWSOptions(configuration.GetAWSOptions());
     builder.Services.AddAWSService<IAmazonDynamoDB>();
-    builder.Services.AddScoped<IMappingRepository, MappingRepository>();
+    builder.Services.AddSingleton<IMappingRepository, MappingRepository>();
 }
 else
 {
     // Mock implementation registration
-    builder.Services.AddScoped<IMappingRepository, MockMappingRepository>();
+    builder.Services.AddSingleton<IMappingRepository, MockMappingRepository>();
 }
 
-builder.Services.AddScoped<IMappingService, MappingService>();
+builder.Services.AddSingleton<IMappingService, MappingService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
