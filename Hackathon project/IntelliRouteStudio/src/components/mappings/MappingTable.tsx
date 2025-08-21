@@ -24,11 +24,11 @@ export default function MappingsTable() {
   const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
   const [selectedMapping, setSelectedMapping] = useState<Mapping | null>(null);
 
-    const handleSave = () => {
-      // Handle save logic here
-      console.log("Saving changes...");
-      closeEditModal();
-    };
+  const handleSave = () => {
+    // Handle save logic here
+    console.log("Saving changes...");
+    closeEditModal();
+  };
   const handleDeleteConfirm = async () => {
     if (selectedMapping) {
       // Remove from UI
@@ -53,16 +53,16 @@ export default function MappingsTable() {
   }, []);
 
   const getStatusColor = (status: string): "success" | "warning" | "error" => {
-  if (status.toLowerCase() === "ready") return "success";
-  if (status.toLowerCase().includes("review")) return "warning";
-  if (status.toLowerCase() === "disabled") return "error";
-  return "error"; // default to error if unknown
-};
+    if (status.toLowerCase() === "ready") return "success";
+    if (status.toLowerCase().includes("review")) return "warning";
+    if (status.toLowerCase() === "disabled") return "error";
+    return "error"; // default to error if unknown
+  };
 
 
   return (
     <>
-    <PageMeta
+      <PageMeta
         title="React.js Basic Tables Dashboard | TailAdmin - Next.js Admin Dashboard Template"
         description="This is React.js Basic Tables Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
@@ -146,43 +146,111 @@ export default function MappingsTable() {
           </div>
         </ComponentCard>
       </div>
-    <Modal isOpen={isEditOpen} onClose={closeEditModal} className="max-w-[700px] m-4">
+      <Modal isOpen={isEditOpen} onClose={closeEditModal} className="max-w-[700px] m-4">
         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Edit Address
+              Edit Mapping
             </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Update your details to keep your profile up-to-date.
-            </p>
+            {/* <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7"> */}
+            {/* Update your details to keep your profile up-to-date. */}
+            {/* </p> */}
           </div>
           <form className="flex flex-col">
             <div className="px-2 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                 <div>
-                  <Label>Country</Label>
-                  <Input type="text" value="United States" />
+                  <Label>SOAP Endpoint</Label>
+                  {/* <Input type="text" value="/GetCustomerList" /> */}
+                  {/* <input
+                    type="text"
+                    placeholder="/GetCustomerList"
+                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
+                  /> */}
+                  <input
+                    type="text"
+                    placeholder="/GetCustomerList"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
                 </div>
 
                 <div>
-                  <Label>City/State</Label>
-                  <Input type="text" value="Arizona, United States." />
+                  <Label>REST Endpoints</Label>
+                  {/* <Input type="text" value="/Customers" /> */}
+                  {/* <input
+                    type="text"
+                    placeholder="/Customers"
+                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
+                  /> */}
+                  <input
+                    type="text"
+                    placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+
                 </div>
 
                 <div>
-                  <Label>Postal Code</Label>
-                  <Input type="text" value="ERT 2489" />
+                  <Label>SOAP Headers</Label>
+                  {/* <Input type="text" value="" /> */}
+                  <input
+                    type="text"
+                    // placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
                 </div>
 
                 <div>
-                  <Label>TAX ID</Label>
-                  <Input type="text" value="AS4568384" />
+                  <Label>REST Headers</Label>
+                  {/* <Input type="text" value="" /> */}
+                  <input
+                    type="text"
+                    // placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                </div>
+                <div>
+                  <Label>SOAP Request Payload</Label>
+                  {/* <Input type="text" value="" /> */}
+                  <input
+                    type="text"
+                    // placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                </div>
+                <div>
+                  <Label>REST Request Payload</Label>
+                  {/* <Input type="text" value="" /> */}
+                  <input
+                    type="text"
+                    // placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                </div>
+                <div>
+                  <Label>SOAP Response Payload</Label>
+                  {/* <Input type="text" value="" /> */}
+                  <input
+                    type="text"
+                    // placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
+                </div>
+                <div>
+                  <Label>REST Response Payload</Label>
+                  {/* <Input type="text" value="" /> */}
+                  <input
+                    type="text"
+                    // placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  />
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
               <Button size="sm" variant="outline" onClick={closeEditModal}>Close</Button>
-              <Button size="sm" onClick={handleSave}>Save Changes</Button>
+              <Button size="sm" onClick={handleSave}>Save Mapping</Button>
+              <Button size="sm" onClick={handleSave}>Regenerate with AI</Button>
             </div>
           </form>
         </div>
