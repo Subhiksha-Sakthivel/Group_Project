@@ -22,6 +22,13 @@ namespace YourNamespace.Controllers
             return Ok(mappings);
         }
 
+        [HttpGet("table")]
+        public async Task<IActionResult> GetTable()
+        {
+            var mappings = await _service.GetTableAsync();
+            return Ok(mappings);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {

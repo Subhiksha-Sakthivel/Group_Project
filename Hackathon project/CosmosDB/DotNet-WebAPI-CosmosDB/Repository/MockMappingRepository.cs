@@ -44,6 +44,17 @@ namespace YourNamespace.Repositories
             return Task.FromResult(_mappings.AsEnumerable());
         }
 
+        public Task<IEnumerable<MappingTable>> GetTableAsync()
+        {
+            return Task.FromResult(_mappings.AsEnumerable().Select(row => new MappingTable{
+                Id = row.Id,
+                Operation = row.Operation,
+                Version = row.Version,
+                Status = row.Status,
+                LastModified =  row.LastModified            
+            }));
+        }
+
         public Task<Mapping> GetByIdAsync(string id)
         {
             var mapping = _mappings.FirstOrDefault(m => m.Id == id);

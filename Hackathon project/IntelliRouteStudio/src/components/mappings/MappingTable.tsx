@@ -1,28 +1,23 @@
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 import Badge from "../ui/badge/Badge";
-import { deleteMapping, getMappings } from "../../service/mappingsService";
+import { deleteMapping, getTable } from "../../service/mappingsService";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Label from "../form/Label";
-import Input from "../form/input/InputField";
+// import Input from "../form/input/InputField";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
+import { MappingTable } from "../../model/MappingTable";
 
-interface Mapping {
-  operation: string;
-  version: number;
-  status: string;
-  lastModified: string;
-}
 
 export default function MappingsTable() {
-  const [mappings, setMappings] = useState<Mapping[]>([]);
+  const [mappings, setMappings] = useState<MappingTable[]>([]);
   const { isOpen: isEditOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
   const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
-  const [selectedMapping, setSelectedMapping] = useState<Mapping | null>(null);
+  const [selectedMapping, setSelectedMapping] = useState<MappingTable | null>(null);
 
   const handleSave = () => {
     // Handle save logic here
@@ -30,34 +25,38 @@ export default function MappingsTable() {
     closeEditModal();
   };
   const handleDeleteConfirm = async () => {
-    if (selectedMapping) {
-      // Remove from UI
-      setMappings((prev) => prev.filter((m) => m !== selectedMapping));
-
-      // Call delete API
-      try {
-        await deleteMapping(selectedMapping.operation); // assuming operation is the unique key
-      } catch (error) {
-        console.error("Failed to delete mapping:", error);
-      }
-
-      setSelectedMapping(null);
-      closeDeleteModal();
+  if (selectedMapping) {
+    try {
+      await deleteMapping(selectedMapping.id);
+      setMappings((prev) => prev.filter((m) => m.id !== selectedMapping.id));
+    } catch (error) {
+      console.error("Failed to delete Mapping:", error);
     }
-  };
+
+    setSelectedMapping(null);
+    closeDeleteModal();
+  }
+};
+
 
   useEffect(() => {
-    getMappings().then((data) => {
-      setMappings(data as Mapping[]);
+  getTable()
+    .then((data: SetStateAction<MappingTable[]>) => {
+      console.log("API getMappings response:", data);
+      setMappings(data);
+    })
+    .catch((error) => {
+      console.error("Failed to fetch mappings:", error);
     });
-  }, []);
+}, []);
+
 
   const getStatusColor = (status: string): "success" | "warning" | "error" => {
-    if (status.toLowerCase() === "ready") return "success";
-    if (status.toLowerCase().includes("review")) return "warning";
-    if (status.toLowerCase() === "disabled") return "error";
-    return "error"; // default to error if unknown
-  };
+  if (status.toLowerCase() === "enabled") return "success";
+  if (status.toLowerCase().includes("review")) return "warning";
+  if (status.toLowerCase() === "disabled") return "error";
+  return "error"; // default to error if unknown
+};
 
 
   return (
@@ -68,7 +67,7 @@ export default function MappingsTable() {
       />
       <PageBreadcrumb pageTitle="Mappings" />
       <div className="space-y-6">
-        <ComponentCard title="Mapping Table">
+        <ComponentCard title="MappingTable Table">
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
             <div className="max-w-full overflow-x-auto">
               <Table>
@@ -83,17 +82,17 @@ export default function MappingsTable() {
                 </TableHeader>
 
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                  {mappings.map((mapping, index) => (
+                  {mappings.map((MappingTable, index) => (
                     <TableRow key={index}>
-                      <TableCell className="px-5 py-4">{mapping.operation}</TableCell>
-                      <TableCell className="px-5 py-4">{mapping.version}</TableCell>
+                      <TableCell className="px-5 py-4">{MappingTable.operation}</TableCell>
+                      <TableCell className="px-5 py-4">{MappingTable.version}</TableCell>
                       <TableCell className="px-5 py-4">
-                        <Badge size="sm" color={getStatusColor(mapping.status)}>
-                          {mapping.status}
+                        <Badge size="sm" color={getStatusColor(MappingTable.status)}>
+                          {MappingTable.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-5 py-4">
-                        {new Date(mapping.lastModified).toLocaleString()}
+                        {new Date(MappingTable.lastModified).toLocaleString()}
                       </TableCell>
                       <TableCell className="px-5 py-4 flex gap-2">
                         <button
@@ -118,7 +117,7 @@ export default function MappingsTable() {
                         </button>
                         <button
                           onClick={() => {
-                            setSelectedMapping(mapping);
+                            setSelectedMapping(MappingTable);
                             openDeleteModal();
                           }}
                           className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"

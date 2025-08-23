@@ -45,6 +45,24 @@ namespace YourNamespace.Services
             // Mock JSON persistence
             return await _mockRepository.GetAllAsync();
         }
+
+        public async Task<IEnumerable<MappingTable?>> GetTableAsync()
+        {
+            // Uncomment when Cosmos DB SDK is ready
+            /*
+            var query = _container.GetItemQueryIterator<Mapping>("SELECT * FROM c");
+            List<Mapping> results = new();
+            while (query.HasMoreResults)
+            {
+                var response = await query.ReadNextAsync();
+                results.AddRange(response);
+            }
+            return results;
+            */
+
+            // Mock JSON persistence
+            return await _mockRepository.GetTableAsync();
+        }
         
         // Get by Id
         public async Task<Mapping?> GetByIdAsync(string id)

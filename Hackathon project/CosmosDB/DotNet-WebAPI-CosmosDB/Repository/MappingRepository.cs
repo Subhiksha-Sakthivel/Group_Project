@@ -12,7 +12,18 @@ namespace YourNamespace.Repositories
 
         public Task<IEnumerable<Mapping>> GetAllAsync()
         {
-            return Task.FromResult<IEnumerable<Mapping>>(_mappings);
+            return Task.FromResult(_mappings.AsEnumerable());
+        }
+
+        public Task<IEnumerable<MappingTable>> GetTableAsync()
+        {
+            return Task.FromResult(_mappings.AsEnumerable().Select(row => new MappingTable{
+                Id = row.Id,
+                Operation = row.Operation,
+                Version = row.Version,
+                Status = row.Status,
+                LastModified =  row.LastModified            
+            }));
         }
 
         public Task<Mapping?> GetByIdAsync(string id)
