@@ -76,8 +76,14 @@ export async function getMappingById(id: string) {
   return await response.json();
 }
 
-export async function editMapping(id: string) {
-  const response = await fetch(base_url+`/api/Mappings/${id}`, { method: "PUT", headers: { 'Access-Control-Allow-Origin': 'true'} });
+export async function editMapping(id: string, mapping: Mapping): Promise<Mapping>  {
+  const response = await fetch(base_url+`/api/Mappings/${id}`, {
+  method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(mapping),
+  });
   if (!response.ok) {
     throw new Error(`Failed to edit mapping by id: ${response.statusText}`);
   }
