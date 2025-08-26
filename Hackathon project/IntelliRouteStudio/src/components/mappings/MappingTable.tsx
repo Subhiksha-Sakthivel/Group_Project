@@ -1,10 +1,10 @@
 import { SetStateAction, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 import Badge from "../ui/badge/Badge";
-import { editMapping, deleteMapping, getMappingById, getTable } from "../../service/mappingsService";
+import { editMapping, deleteMapping, getMappingById, getTable, createMapping } from "../../service/mappingsService";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
+import Button from "../../components/common/Button";
 import Label from "../form/Label";
 // import Input from "../form/input/InputField";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
@@ -15,23 +15,31 @@ import { Mapping } from "../../model/Mapping";
 
 export default function MappingsTable() {
   const [mappings, setMappings] = useState<MappingTable[]>([]);
+  const { isOpen: isCreateOpen, openModal: openCreateModal, closeModal: closeCreateModal } = useModal();
   const { isOpen: isEditOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
   const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
   const [selectedMapping, setSelectedMapping] = useState<MappingTable | null>(null);
   const [editForm, setEditForm] = useState<Mapping | null>(null);
+  const [createForm, setCreateForm] = useState<Mapping>({
+    id: "", // will be auto-generated
+    operation: "",
+    version: 1,
+    status: "Enabled",
+    lastModified: new Date(),
+    soapEndpoint: "",
+    soapHeaders: "",
+    soapRequestPayload: "",
+    soapResponsePayload: "",
+    restEndpoint: "",
+    restHeaders: "",
+    restRequestPayload: "",
+    restResponsePayload: "",
+  });
 
-  const handleSave = async() => {
-    if (!editForm) return;
-    // Handle save logic here
-    if (selectedMapping) {
-    try {
-      await editMapping(selectedMapping.id, editForm);
-    } catch (error) {
-      console.error("Failed to edit Mapping:", error);
-    }
-    closeEditModal();
+
+  function handleAI(): void {
+    console.log("Handle AI api calling here");
   }
-  };
 
   const handleDeleteConfirm = async () => {
   if (selectedMapping) {
@@ -41,9 +49,63 @@ export default function MappingsTable() {
     } catch (error) {
       console.error("Failed to delete Mapping:", error);
     }
-
     setSelectedMapping(null);
     closeDeleteModal();
+  }
+};
+
+const handleEditConfirm = async () => {
+  if (selectedMapping) {
+    try {
+      await editMapping(selectedMapping.id,editForm!);
+    } catch (error) {
+      console.error("Failed to edit Mapping:", error);
+    }
+    setSelectedMapping(null);
+    closeEditModal();
+  }
+};
+
+const handleCreateConfirm = async () => {
+  try {
+    // find max id from current mappings
+    const lastId = mappings.length > 0 ? Math.max(...mappings.map(m => parseInt(m.id))) : 0;
+
+    const newMapping: Mapping = {
+      ...createForm,
+      id: (lastId + 1).toString(),
+      lastModified: new Date(),
+    };
+
+    await createMapping(newMapping);
+
+    setMappings(prev => [...prev, {
+      id: newMapping.id,
+      operation: newMapping.operation,
+      version: newMapping.version,
+      status: newMapping.status,
+      lastModified: newMapping.lastModified,
+    }]);
+
+    setCreateForm({
+      id: "",
+      operation: "",
+      version: 1,
+      status: "Enabled",
+      lastModified: new Date(),
+      soapEndpoint: "",
+      soapHeaders: "",
+      soapRequestPayload: "",
+      soapResponsePayload: "",
+      restEndpoint: "",
+      restHeaders: "",
+      restRequestPayload: "",
+      restResponsePayload: "",
+    });
+
+    closeCreateModal();
+  } catch (error) {
+    console.error("Failed to create Mapping:", error);
   }
 };
 
@@ -76,7 +138,16 @@ export default function MappingsTable() {
       />
       <PageBreadcrumb pageTitle="Mappings" />
       <div className="space-y-6">
-        <ComponentCard title="MappingTable Table">
+        <ComponentCard
+          title={
+            <div className="flex items-center justify-between w-full">
+              <span>Mapping Table</span>
+              <Button type="button" onClick={openCreateModal}>
+                + Create New
+              </Button>
+            </div>
+          }
+        >
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
             <div className="max-w-full overflow-x-auto">
               <Table>
@@ -108,8 +179,9 @@ export default function MappingsTable() {
                           onClick={async () => {
                             const fullMapping = await getMappingById(MappingTable.id);
                             setEditForm(fullMapping);
+                            setSelectedMapping(MappingTable);
                             openEditModal();
-                          }}
+                          }}
                           className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                         >
                           <svg
@@ -158,6 +230,153 @@ export default function MappingsTable() {
           </div>
         </ComponentCard>
       </div>
+      {/* Create Model */}
+      <Modal isOpen={isCreateOpen} onClose={closeCreateModal} className="max-w-[700px] w-full m-4">
+        <div className="relative flex flex-col w-full max-h-[90vh] p-4 overflow-y-auto bg-white rounded-3xl dark:bg-gray-900 lg:p-11">
+          <div className="flex items-center justify-between px-2 pr-14 mb-6 shrink-0">
+            <h4 className="inline-block mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+              Create Mapping
+            </h4>
+            <Button size="sm" onClick={handleAI}>Regenerate with AI</Button>
+          </div>
+
+          <form className="flex flex-col flex-1 overflow-hidden">
+            <div className="px-2 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+
+                {/* Operation */}
+                <div>
+                  <Label>Operation</Label>
+                  <input
+                    type="text"
+                    value={createForm.operation}
+                    onChange={(e) => setCreateForm({ ...createForm, operation: e.target.value })}
+                    placeholder="GetCustomers"
+                    className="h-11 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* Version */}
+                <div>
+                  <Label>Version</Label>
+                  <input
+                    type="number"
+                    value={createForm.version}
+                    onChange={(e) => setCreateForm({ ...createForm, version: parseInt(e.target.value) })}
+                    className="h-11 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* Status */}
+                <div>
+                  <Label>Status</Label>
+                  <select
+                    value={createForm.status}
+                    onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
+                    className="h-11 w-[285px] rounded-lg border px-3"
+                  >
+                    <option value="Enabled">Enabled</option>
+                    <option value="Disabled">Disabled</option>
+                    <option value="Ready for Review">Ready for Review</option>
+                  </select>
+                </div>
+
+                {/* SOAP Endpoint */}
+                <div>
+                  <Label>SOAP Endpoint</Label>
+                  <input
+                    type="text"
+                    value={createForm.soapEndpoint}
+                    onChange={(e) => setCreateForm({ ...createForm, soapEndpoint: e.target.value })}
+                    placeholder="/GetCustomerList"
+                    className="h-11 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* REST Endpoint */}
+                <div>
+                  <Label>REST Endpoint</Label>
+                  <input
+                    type="text"
+                    value={createForm.restEndpoint}
+                    onChange={(e) => setCreateForm({ ...createForm, restEndpoint: e.target.value })}
+                    placeholder="/Customers"
+                    className="h-11 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* SOAP Headers */}
+                <div>
+                  <Label>SOAP Headers</Label>
+                  <textarea
+                    value={createForm.soapHeaders}
+                    onChange={(e) => setCreateForm({ ...createForm, soapHeaders: e.target.value })}
+                    className="h-20 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* REST Headers */}
+                <div>
+                  <Label>REST Headers</Label>
+                  <textarea
+                    value={createForm.restHeaders}
+                    onChange={(e) => setCreateForm({ ...createForm, restHeaders: e.target.value })}
+                    className="h-20 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* SOAP Request Payload */}
+                <div>
+                  <Label>SOAP Request Payload</Label>
+                  <textarea
+                    value={createForm.soapRequestPayload}
+                    onChange={(e) => setCreateForm({ ...createForm, soapRequestPayload: e.target.value })}
+                    className="h-20 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* REST Request Payload */}
+                <div>
+                  <Label>REST Request Payload</Label>
+                  <textarea
+                    value={createForm.restRequestPayload}
+                    onChange={(e) => setCreateForm({ ...createForm, restRequestPayload: e.target.value })}
+                    className="h-20 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* SOAP Response Payload */}
+                <div>
+                  <Label>SOAP Response Payload</Label>
+                  <textarea
+                    value={createForm.soapResponsePayload}
+                    onChange={(e) => setCreateForm({ ...createForm, soapResponsePayload: e.target.value })}
+                    className="h-20 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+                {/* REST Response Payload */}
+                <div>
+                  <Label>REST Response Payload</Label>
+                  <textarea
+                    value={createForm.restResponsePayload}
+                    onChange={(e) => setCreateForm({ ...createForm, restResponsePayload: e.target.value })}
+                    className="h-20 w-[285px] rounded-lg border px-3"
+                  />
+                </div>
+
+              </div>
+            </div>
+
+             <div className="flex items-center gap-3 px-2 mt-6 shrink-0 lg:justify-end">
+              <Button type="button" onClick={closeCreateModal}>Close</Button>
+              <Button type="button" onClick={handleCreateConfirm}>Save mapping</Button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* Edit Model */}
       <Modal isOpen={isEditOpen} onClose={closeEditModal} className="max-w-[700px] m-4">
         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="flex items-center justify-between px-2 pr-14 mb-6">
@@ -165,7 +384,7 @@ export default function MappingsTable() {
               Edit Mapping
             </h4>
             {/* <div className="flex items-center gap-3 px-2 mt-2 lg:justify-end"> */}
-                <Button size="sm" onClick={handleSave}>Regenerate with AI</Button>
+                <Button size="sm" onClick={handleAI}>Regenerate with AI</Button>
             {/* </div> */}
             {/* <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7"> */}
             {/* Update your details to keep your profile up-to-date. */}
@@ -216,8 +435,7 @@ export default function MappingsTable() {
                 <div>
                   <Label>SOAP Headers</Label>
                   {/* <Input type="text" value="" /> */}
-                  <input
-                    type="text"
+                  <textarea
                     value={editForm?.soapHeaders || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm!, soapHeaders: e.target.value })
@@ -230,8 +448,7 @@ export default function MappingsTable() {
                 <div>
                   <Label>REST Headers</Label>
                   {/* <Input type="text" value="" /> */}
-                  <input
-                    type="text"
+                  <textarea
                     value={editForm?.restHeaders || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm!, restHeaders: e.target.value })
@@ -243,8 +460,7 @@ export default function MappingsTable() {
                 <div>
                   <Label>SOAP Request Payload</Label>
                   {/* <Input type="text" value="" /> */}
-                  <input
-                    type="text"
+                  <textarea
                     value={editForm?.soapRequestPayload || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm!, soapRequestPayload: e.target.value })
@@ -256,8 +472,7 @@ export default function MappingsTable() {
                 <div>
                   <Label>REST Request Payload</Label>
                   {/* <Input type="text" value="" /> */}
-                  <input
-                    type="text"
+                  <textarea
                     value={editForm?.restRequestPayload || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm!, restRequestPayload: e.target.value })
@@ -269,8 +484,7 @@ export default function MappingsTable() {
                 <div>
                   <Label>SOAP Response Payload</Label>
                   {/* <Input type="text" value="" /> */}
-                  <input
-                    type="text"
+                  <textarea
                     value={editForm?.soapResponsePayload || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm!, soapResponsePayload: e.target.value })
@@ -282,8 +496,7 @@ export default function MappingsTable() {
                 <div>
                   <Label>REST Response Payload</Label>
                   {/* <Input type="text" value="" /> */}
-                  <input
-                    type="text"
+                  <textarea
                     value={editForm?.restResponsePayload || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm!, restResponsePayload: e.target.value })
@@ -295,8 +508,8 @@ export default function MappingsTable() {
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeEditModal}>Close</Button>
-              <Button size="sm" onClick={handleSave}>Save Mapping</Button>
+              <Button type="button" onClick={closeEditModal}>Close</Button>
+              <Button type="button" onClick={handleEditConfirm}>Save mapping</Button>
             </div>
           </form>
         </div>

@@ -57,8 +57,7 @@ export async function createMapping(data: Mapping) {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': 'true'
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
     }
@@ -76,11 +75,13 @@ export async function getMappingById(id: string) {
   return await response.json();
 }
 
-export async function editMapping(id: string, mapping: Mapping): Promise<Mapping>  {
+export async function editMapping(id: string, mapping: Mapping) {
   const response = await fetch(base_url+`/api/Mappings/${id}`, {
   method: "PUT",
     headers: {
-      "Content-Type": "application/json"
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': 'true'
     },
     body: JSON.stringify(mapping),
   });
@@ -91,7 +92,6 @@ export async function editMapping(id: string, mapping: Mapping): Promise<Mapping
 
 export async function deleteMapping(id: string) {
   const response = await fetch(base_url+`/api/Mappings/${id}`, { method: "DELETE", headers: { 'Access-Control-Allow-Origin': 'true'} });
-  console.log(response);
   if (!response.ok) {
     throw new Error(`Failed to delete mapping: ${response.statusText}`);
   }
