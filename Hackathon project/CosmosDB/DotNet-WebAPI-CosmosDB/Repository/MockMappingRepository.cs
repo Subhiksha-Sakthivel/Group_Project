@@ -90,6 +90,16 @@ namespace YourNamespace.Repositories
                 existing.RestRequestPayload = updated.RestRequestPayload;
                 existing.RestResponsePayload = updated.RestResponsePayload;
 
+                existing.RestSourceEndpoint = updated.RestSourceEndpoint;
+                existing.RestSourceHeaders = updated.RestSourceHeaders;
+                existing.RestSourceRequestPayload = updated.RestSourceRequestPayload;
+                existing.RestSourceResponsePayload = updated.RestSourceResponsePayload;
+
+                existing.RestDestinationEndpoint = updated.RestDestinationEndpoint;
+                existing.RestDestinationHeaders = updated.RestDestinationHeaders;
+                existing.RestDestinationRequestPayload = updated.RestDestinationRequestPayload;
+                existing.RestDestinationResponsePayload = updated.RestDestinationResponsePayload;
+
                 SaveToFile();
             }
             return Task.FromResult(existing);

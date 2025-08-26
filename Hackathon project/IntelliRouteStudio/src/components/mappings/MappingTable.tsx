@@ -20,6 +20,7 @@ export default function MappingsTable() {
   const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
   const [selectedMapping, setSelectedMapping] = useState<MappingTable | null>(null);
   const [editForm, setEditForm] = useState<Mapping | null>(null);
+  const [activeTab, setActiveTab] = useState<"tab1" | "tab2">("tab1");
   const [createForm, setCreateForm] = useState<Mapping>({
     id: "", // will be auto-generated
     operation: "",
@@ -34,6 +35,14 @@ export default function MappingsTable() {
     restHeaders: "",
     restRequestPayload: "",
     restResponsePayload: "",
+    restSourceEndpoint: "",
+    restSourceHeaders: "",
+    restSourceRequestPayload: "",
+    restSourceResponsePayload: "",
+    restDestinationEndpoint: "",
+    restDestinationHeaders: "",
+    restDestinationRequestPayload: "",
+    restDestinationResponsePayload: ""
   });
 
 
@@ -58,6 +67,11 @@ const handleEditConfirm = async () => {
   if (selectedMapping) {
     try {
       await editMapping(selectedMapping.id,editForm!);
+      setMappings((prev) =>
+        prev.map((m) =>
+          m.id === selectedMapping.id ? { ...m, ...editForm } : m
+        )
+      );
     } catch (error) {
       console.error("Failed to edit Mapping:", error);
     }
@@ -231,7 +245,7 @@ const handleCreateConfirm = async () => {
         </ComponentCard>
       </div>
       {/* Create Model */}
-      <Modal isOpen={isCreateOpen} onClose={closeCreateModal} className="max-w-[700px] w-full m-4">
+      <Modal isOpen={isCreateOpen} onClose={closeCreateModal} className="max-w-[800px] w-full m-4">
         <div className="relative flex flex-col w-full max-h-[90vh] p-4 overflow-y-auto bg-white rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="flex items-center justify-between px-2 pr-14 mb-6 shrink-0">
             <h4 className="inline-block mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
@@ -240,11 +254,31 @@ const handleCreateConfirm = async () => {
             <Button size="sm" onClick={handleAI}>Regenerate with AI</Button>
           </div>
 
+          {/* Tabs Header */}
+        <div className="flex border-b border-gray-300 mb-4">
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "tab1" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-600"
+            }`}
+            onClick={() => setActiveTab("tab1")}
+          >
+            SOAP ↔ REST
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "tab2" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-600"
+            }`}
+            onClick={() => setActiveTab("tab2")}
+          >
+            REST Source ↔ REST Destination
+          </button>
+        </div>
+
           <form className="flex flex-col flex-1 overflow-hidden">
             <div className="px-2 overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
 
-                {/* Operation */}
+              {/* Shared General Fields */}
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2 mb-6">
                 <div>
                   <Label>Operation</Label>
                   <input
@@ -256,7 +290,6 @@ const handleCreateConfirm = async () => {
                   />
                 </div>
 
-                {/* Version */}
                 <div>
                   <Label>Version</Label>
                   <input
@@ -267,7 +300,6 @@ const handleCreateConfirm = async () => {
                   />
                 </div>
 
-                {/* Status */}
                 <div>
                   <Label>Status</Label>
                   <select
@@ -280,95 +312,178 @@ const handleCreateConfirm = async () => {
                     <option value="Ready for Review">Ready for Review</option>
                   </select>
                 </div>
-
-                {/* SOAP Endpoint */}
-                <div>
-                  <Label>SOAP Endpoint</Label>
-                  <input
-                    type="text"
-                    value={createForm.soapEndpoint}
-                    onChange={(e) => setCreateForm({ ...createForm, soapEndpoint: e.target.value })}
-                    placeholder="/GetCustomerList"
-                    className="h-11 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* REST Endpoint */}
-                <div>
-                  <Label>REST Endpoint</Label>
-                  <input
-                    type="text"
-                    value={createForm.restEndpoint}
-                    onChange={(e) => setCreateForm({ ...createForm, restEndpoint: e.target.value })}
-                    placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* SOAP Headers */}
-                <div>
-                  <Label>SOAP Headers</Label>
-                  <textarea
-                    value={createForm.soapHeaders}
-                    onChange={(e) => setCreateForm({ ...createForm, soapHeaders: e.target.value })}
-                    className="h-20 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* REST Headers */}
-                <div>
-                  <Label>REST Headers</Label>
-                  <textarea
-                    value={createForm.restHeaders}
-                    onChange={(e) => setCreateForm({ ...createForm, restHeaders: e.target.value })}
-                    className="h-20 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* SOAP Request Payload */}
-                <div>
-                  <Label>SOAP Request Payload</Label>
-                  <textarea
-                    value={createForm.soapRequestPayload}
-                    onChange={(e) => setCreateForm({ ...createForm, soapRequestPayload: e.target.value })}
-                    className="h-20 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* REST Request Payload */}
-                <div>
-                  <Label>REST Request Payload</Label>
-                  <textarea
-                    value={createForm.restRequestPayload}
-                    onChange={(e) => setCreateForm({ ...createForm, restRequestPayload: e.target.value })}
-                    className="h-20 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* SOAP Response Payload */}
-                <div>
-                  <Label>SOAP Response Payload</Label>
-                  <textarea
-                    value={createForm.soapResponsePayload}
-                    onChange={(e) => setCreateForm({ ...createForm, soapResponsePayload: e.target.value })}
-                    className="h-20 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
-                {/* REST Response Payload */}
-                <div>
-                  <Label>REST Response Payload</Label>
-                  <textarea
-                    value={createForm.restResponsePayload}
-                    onChange={(e) => setCreateForm({ ...createForm, restResponsePayload: e.target.value })}
-                    className="h-20 w-[285px] rounded-lg border px-3"
-                  />
-                </div>
-
               </div>
+
+                {/* --- Tab 1: SOAP ↔ REST --- */}
+                {activeTab === "tab1" && (
+                <>
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+
+                    <div>
+                      <Label>SOAP Endpoint</Label>
+                      <input
+                        type="text"
+                        value={createForm.soapEndpoint}
+                        onChange={(e) => setCreateForm({ ...createForm, soapEndpoint: e.target.value })}
+                        placeholder="/GetCustomerList"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Endpoint</Label>
+                      <input
+                        type="text"
+                        value={createForm.restEndpoint}
+                        onChange={(e) => setCreateForm({ ...createForm, restEndpoint: e.target.value })}
+                        placeholder="/Customers"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>SOAP Headers</Label>
+                      <textarea
+                        value={createForm.soapHeaders}
+                        onChange={(e) => setCreateForm({ ...createForm, soapHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Headers</Label>
+                      <textarea
+                        value={createForm.restHeaders}
+                        onChange={(e) => setCreateForm({ ...createForm, restHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>SOAP Request Payload</Label>
+                      <textarea
+                        value={createForm.soapRequestPayload}
+                        onChange={(e) => setCreateForm({ ...createForm, soapRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Request Payload</Label>
+                      <textarea
+                        value={createForm.restRequestPayload}
+                        onChange={(e) => setCreateForm({ ...createForm, restRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>SOAP Response Payload</Label>
+                      <textarea
+                        value={createForm.soapResponsePayload}
+                        onChange={(e) => setCreateForm({ ...createForm, soapResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Response Payload</Label>
+                      <textarea
+                        value={createForm.restResponsePayload}
+                        onChange={(e) => setCreateForm({ ...createForm, restResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+                {/* --- Tab 2: REST Source ↔ REST Destination --- */}
+                {activeTab === "tab2" && (
+                <>
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+
+                    <div>
+                      <Label>REST Source Endpoint</Label>
+                      <input
+                        type="text"
+                        value={createForm.restSourceEndpoint}
+                        onChange={(e) => setCreateForm({ ...createForm, restSourceEndpoint: e.target.value })}
+                        placeholder="/SourceCustomers"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Endpoint</Label>
+                      <input
+                        type="text"
+                        value={createForm.restDestinationEndpoint}
+                        onChange={(e) => setCreateForm({ ...createForm, restDestinationEndpoint: e.target.value })}
+                        placeholder="/DestinationCustomers"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Source Headers</Label>
+                      <textarea
+                        value={createForm.restSourceHeaders}
+                        onChange={(e) => setCreateForm({ ...createForm, restSourceHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Headers</Label>
+                      <textarea
+                        value={createForm.restDestinationHeaders}
+                        onChange={(e) => setCreateForm({ ...createForm, restDestinationHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Source Request Payload</Label>
+                      <textarea
+                        value={createForm.restSourceRequestPayload}
+                        onChange={(e) => setCreateForm({ ...createForm, restSourceRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Request Payload</Label>
+                      <textarea
+                        value={createForm.restDestinationRequestPayload}
+                        onChange={(e) => setCreateForm({ ...createForm, restDestinationRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+                    <div>
+                      <Label>REST Source Response Payload</Label>
+                      <textarea
+                        value={createForm.restSourceResponsePayload}
+                        onChange={(e) => setCreateForm({ ...createForm, restSourceResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Response Payload</Label>
+                      <textarea
+                        value={createForm.restDestinationResponsePayload}
+                        onChange={(e) => setCreateForm({ ...createForm, restDestinationResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
-             <div className="flex items-center gap-3 px-2 mt-6 shrink-0 lg:justify-end">
+            {/* Footer Buttons */}
+            <div className="flex items-center gap-3 px-2 mt-6 shrink-0 lg:justify-end">
               <Button type="button" onClick={closeCreateModal}>Close</Button>
               <Button type="button" onClick={handleCreateConfirm}>Save mapping</Button>
             </div>
@@ -376,137 +491,223 @@ const handleCreateConfirm = async () => {
         </div>
       </Modal>
 
-      {/* Edit Model */}
+
+      {/* Edit Modal */}
       <Modal isOpen={isEditOpen} onClose={closeEditModal} className="max-w-[700px] m-4">
         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="flex items-center justify-between px-2 pr-14 mb-6">
             <h4 className="inline-block mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
               Edit Mapping
             </h4>
-            {/* <div className="flex items-center gap-3 px-2 mt-2 lg:justify-end"> */}
-                <Button size="sm" onClick={handleAI}>Regenerate with AI</Button>
-            {/* </div> */}
-            {/* <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7"> */}
-            {/* Update your details to keep your profile up-to-date. */}
-            {/* </p> */}
+            <Button size="sm" onClick={handleAI}>Regenerate with AI</Button>
           </div>
+
           <form className="flex flex-col">
             <div className="px-2 overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2 mb-6">
+                {/* Shared General Fields */}
                 <div>
-                  <Label>SOAP Endpoint</Label>
-                  {/* <Input type="text" value="/GetCustomerList" /> */}
-                  {/* <input
-                    type="text"
-                    placeholder="/GetCustomerList"
-                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
-                  /> */}
+                  <Label>Operation</Label>
                   <input
                     type="text"
-                    value={editForm?.soapEndpoint || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, soapEndpoint: e.target.value })
-                    }
-                    placeholder="/GetCustomerList"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    value={editForm?.operation || ""}
+                    onChange={(e) => setEditForm({ ...editForm!, operation: e.target.value })}
+                    placeholder="GetCustomers"
+                    className="h-11 w-[285px] rounded-lg border px-3"
                   />
                 </div>
 
                 <div>
-                  <Label>REST Endpoints</Label>
-                  {/* <Input type="text" value="/Customers" /> */}
-                  {/* <input
-                    type="text"
-                    placeholder="/Customers"
-                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
-                  /> */}
+                  <Label>Version</Label>
                   <input
-                    type="text"
-                    value={editForm?.restEndpoint || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, restEndpoint: e.target.value })
-                    }
-                    placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-
-                </div>
-
-                <div>
-                  <Label>SOAP Headers</Label>
-                  {/* <Input type="text" value="" /> */}
-                  <textarea
-                    value={editForm?.soapHeaders || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, soapHeaders: e.target.value })
-                    }
-                    // placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    type="number"
+                    value={editForm?.version || ""}
+                    onChange={(e) => setEditForm({ ...editForm!, version: parseInt(e.target.value) })}
+                    className="h-11 w-[285px] rounded-lg border px-3"
                   />
                 </div>
 
                 <div>
-                  <Label>REST Headers</Label>
-                  {/* <Input type="text" value="" /> */}
-                  <textarea
-                    value={editForm?.restHeaders || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, restHeaders: e.target.value })
-                    }
-                    // placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-                <div>
-                  <Label>SOAP Request Payload</Label>
-                  {/* <Input type="text" value="" /> */}
-                  <textarea
-                    value={editForm?.soapRequestPayload || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, soapRequestPayload: e.target.value })
-                    }
-                    // placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-                <div>
-                  <Label>REST Request Payload</Label>
-                  {/* <Input type="text" value="" /> */}
-                  <textarea
-                    value={editForm?.restRequestPayload || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, restRequestPayload: e.target.value })
-                    }
-                    // placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-                <div>
-                  <Label>SOAP Response Payload</Label>
-                  {/* <Input type="text" value="" /> */}
-                  <textarea
-                    value={editForm?.soapResponsePayload || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, soapResponsePayload: e.target.value })
-                    }
-                    // placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-                <div>
-                  <Label>REST Response Payload</Label>
-                  {/* <Input type="text" value="" /> */}
-                  <textarea
-                    value={editForm?.restResponsePayload || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm!, restResponsePayload: e.target.value })
-                    }
-                    // placeholder="/Customers"
-                    className="h-11 w-[285px] rounded-lg border border-gray-200 bg-transparent py-2.5 pl-3 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
+                  <Label>Status</Label>
+                  <select
+                    value={editForm?.status || ""}
+                    onChange={(e) => setEditForm({ ...editForm!, status: e.target.value })}
+                    className="h-11 w-[285px] rounded-lg border px-3"
+                  >
+                    <option value="Enabled">Enabled</option>
+                    <option value="Disabled">Disabled</option>
+                    <option value="Ready for Review">Ready for Review</option>
+                  </select>
                 </div>
               </div>
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                {/* Tab1 Fields (SOAP↔REST) */}
+                {editForm?.soapEndpoint || editForm?.restEndpoint ? (
+                  <>
+                    <div>
+                      <Label>SOAP Endpoint</Label>
+                      <input
+                        type="text"
+                        value={editForm?.soapEndpoint || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, soapEndpoint: e.target.value })}
+                        placeholder="/GetCustomerList"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Endpoint</Label>
+                      <input
+                        type="text"
+                        value={editForm?.restEndpoint || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, restEndpoint: e.target.value })}
+                        placeholder="/Customers"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>SOAP Headers</Label>
+                      <textarea
+                        value={editForm?.soapHeaders || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, soapHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Headers</Label>
+                      <textarea
+                        value={editForm?.restHeaders || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, restHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>SOAP Request Payload</Label>
+                      <textarea
+                        value={editForm?.soapRequestPayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, soapRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Request Payload</Label>
+                      <textarea
+                        value={editForm?.restRequestPayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, restRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>SOAP Response Payload</Label>
+                      <textarea
+                        value={editForm?.soapResponsePayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, soapResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Response Payload</Label>
+                      <textarea
+                        value={editForm?.restResponsePayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, restResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+                  </>
+                ) : null}
+
+                {/* Tab2 Fields (REST Source↔REST Destination) */}
+                {editForm?.restSourceEndpoint || editForm?.restDestinationEndpoint ? (
+                  <>
+                    <div>
+                      <Label>REST Source Endpoint</Label>
+                      <input
+                        type="text"
+                        value={editForm?.restSourceEndpoint || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, restSourceEndpoint: e.target.value })}
+                        placeholder="/SourceCustomers"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Endpoint</Label>
+                      <input
+                        type="text"
+                        value={editForm?.restDestinationEndpoint || ""}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm!, restDestinationEndpoint: e.target.value })
+                        }
+                        placeholder="/DestinationCustomers"
+                        className="h-11 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Source Headers</Label>
+                      <textarea
+                        value={editForm?.restSourceHeaders || ""}
+                        onChange={(e) => setEditForm({ ...editForm!, restSourceHeaders: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Headers</Label>
+                      <textarea
+                        value={editForm?.restDestinationHeaders || ""}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm!, restDestinationHeaders: e.target.value })
+                        }
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Source Request Payload</Label>
+                      <textarea
+                        value={editForm.restSourceRequestPayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm, restSourceRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Request Payload</Label>
+                      <textarea
+                        value={editForm.restDestinationRequestPayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm, restDestinationRequestPayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+                    <div>
+                      <Label>REST Source Response Payload</Label>
+                      <textarea
+                        value={editForm.restSourceResponsePayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm, restSourceResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>REST Destination Response Payload</Label>
+                      <textarea
+                        value={editForm.restDestinationResponsePayload || ""}
+                        onChange={(e) => setEditForm({ ...editForm, restDestinationResponsePayload: e.target.value })}
+                        className="h-20 w-[285px] rounded-lg border px-3"
+                      />
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
+
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
               <Button type="button" onClick={closeEditModal}>Close</Button>
               <Button type="button" onClick={handleEditConfirm}>Save mapping</Button>
@@ -514,6 +715,7 @@ const handleCreateConfirm = async () => {
           </form>
         </div>
       </Modal>
+
       {/* Delete Confirmation Modal */}
       <Modal isOpen={isDeleteOpen} onClose={closeDeleteModal} className="max-w-sm m-4">
         <div className="p-6 bg-white rounded-3xl dark:bg-gray-900">

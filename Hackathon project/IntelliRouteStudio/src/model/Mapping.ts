@@ -5,12 +5,20 @@ export interface Mapping
         version: number,
         status: string,
         lastModified : Date,
-        soapEndpoint: string,
-        soapHeaders: string,
-        soapRequestPayload: string,
-        soapResponsePayload: string,
-        restEndpoint: string,
-        restHeaders: string,
-        restRequestPayload: string,
-        restResponsePayload: string
+        soapEndpoint?: string,
+        soapHeaders?: string,
+        soapRequestPayload?: string,
+        soapResponsePayload?: string,
+        restEndpoint?: string,
+        restHeaders?: string,
+        restRequestPayload?: string,
+        restResponsePayload?: string
+        restSourceEndpoint?: string,
+        restSourceHeaders?: string,
+        restSourceRequestPayload?: string,
+        restSourceResponsePayload?: string,
+        restDestinationEndpoint?: string,
+        restDestinationHeaders?: string,
+        restDestinationRequestPayload?: string,
+        restDestinationResponsePayload?: string
 }
