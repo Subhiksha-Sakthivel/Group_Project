@@ -66,6 +66,36 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            if (builder.Environment.IsDevelopment())
+            {
+                // In development, allow all origins for easier testing
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
+            else
+            {
+                // In production, restrict to specific origins
+                policy.WithOrigins(
+                    "http://localhost:5173",    // React dev server
+                    "http://localhost:7214",    // HTTP API port
+                    "http://localhost:5214",    // HTTP API port
+                    "https://localhost:7214",   // HTTPS API port
+                    "https://localhost:5214"    // HTTPS API port
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+            }
+        });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -73,6 +103,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Enable CORS
+app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
 

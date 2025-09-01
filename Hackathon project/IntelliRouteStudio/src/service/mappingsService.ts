@@ -34,7 +34,7 @@ import { Mapping } from "../model/Mapping";
 //     }, 300);
 //   });
 // }
-const base_url = 'http://localhost:5240';
+const base_url = 'http://localhost:5214';
 
 export async function getMappings() {
   const response = await fetch(base_url+'http/api/Mappings', { method: "GET", headers: { 'Access-Control-Allow-Origin': 'true'} });
@@ -95,4 +95,49 @@ export async function deleteMapping(id: string) {
   if (!response.ok) {
     throw new Error(`Failed to delete mapping: ${response.statusText}`);
   }
+}
+
+export async function softDeleteMapping(id: string) {
+  const response = await fetch(base_url+`/api/Mappings/${id}/soft-delete`, { 
+    method: "POST", 
+    headers: { 
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': 'true'
+    } 
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to soft delete mapping: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+export async function restoreMapping(id: string) {
+  const response = await fetch(base_url+`/api/Mappings/${id}/restore`, { 
+    method: "POST", 
+    headers: { 
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': 'true'
+    } 
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to restore mapping: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+export async function cleanupExpiredMappings() {
+  const response = await fetch(base_url+`/api/Mappings/cleanup-expired`, { 
+    method: "POST", 
+    headers: { 
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': 'true'
+    } 
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to cleanup expired mappings: ${response.statusText}`);
+  }
+  return await response.json();
 }

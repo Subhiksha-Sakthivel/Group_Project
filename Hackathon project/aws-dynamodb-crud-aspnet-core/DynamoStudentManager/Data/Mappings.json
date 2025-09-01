@@ -1,0 +1,196 @@
+[
+  {
+    "Id": "1",
+    "Operation": "GetCustomers",
+    "Version": 2,
+    "Status": "Enabled",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/get-customers",
+      "Headers": "<header>SOAP</header>",
+      "RequestPayload": "<request>GetCustomers</request>",
+      "ResponsePayload": "<response>CustomersList</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/customers",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"GetCustomers\" }",
+      "ResponsePayload": "{ \"status\": \"ok\", \"data\": [] }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "2",
+    "Operation": "CreateCustomers",
+    "Version": 2,
+    "Status": "Enabled",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/create-customers",
+      "Headers": "<header>SOAP</header>",
+      "RequestPayload": "<request>CreateCustomers</request>",
+      "ResponsePayload": "<response>Success</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/customers",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"CreateCustomers\" }",
+      "ResponsePayload": "{ \"status\": \"created\" }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "3",
+    "Operation": "UpdateCustomers",
+    "Version": 2,
+    "Status": "Enabled",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/update-customers",
+      "Headers": "<header>SOAP</header>",
+      "RequestPayload": "<request>UpdateCustomers</request>",
+      "ResponsePayload": "<response>Updated</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/customers",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"UpdateCustomers\" }",
+      "ResponsePayload": "{ \"status\": \"updated\" }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "4",
+    "Operation": "DeleteCustomers",
+    "Version": 2,
+    "Status": "Enabled",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/delete-customers",
+      "Headers": "<header>SOAP</header>",
+      "RequestPayload": "<request>DeleteCustomers</request>",
+      "ResponsePayload": "<response>Deleted</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/customers",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"DeleteCustomers\" }",
+      "ResponsePayload": "{ \"status\": \"deleted\" }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "5",
+    "Operation": "GetAccounts",
+    "Version": 1,
+    "Status": "Ready for Review",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/get-accounts",
+      "Headers": "<header>SOAP</header>",
+      "RequestPayload": "<request>GetAccounts</request>",
+      "ResponsePayload": "<response>AccountsList</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/accounts",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"GetAccounts\" }",
+      "ResponsePayload": "{ \"status\": \"ok\", \"data\": [] }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "6",
+    "Operation": "GetTransactions",
+    "Version": 2,
+    "Status": "Disabled",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/get-transactions",
+      "Headers": "<header>SOAP</header>",
+      "RequestPayload": "<request>GetTransactions</request>",
+      "ResponsePayload": "<response>TransactionsList</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/transactions",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"GetTransactions\" }",
+      "ResponsePayload": "{ \"status\": \"ok\", \"data\": [] }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "7",
+    "Operation": "UpdateAccounts",
+    "Version": 3,
+    "Status": "Ready for Review",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "https://legacy.example.com/update-accounts",
+      "Headers": "<header>SOAP</header>\n<header>SOAP2</header>",
+      "RequestPayload": "<request>UpdateAccounts</request>",
+      "ResponsePayload": "<response>Updated</response>"
+    },
+    "Rest": {
+      "Endpoint": "https://api.example.com/accounts",
+      "Headers": "{ \"Auth\": \"Bearer token\" }",
+      "RequestPayload": "{ \"operation\": \"UpdateAccounts\" }",
+      "ResponsePayload": "{ \"status\": \"updated\" }"
+    },
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "8",
+    "Operation": "CustomOperation",
+    "Version": 1,
+    "Status": "Enabled",
+    "LastModified": "2024-01-01T00:00:00Z",
+    "IsDeleted": false,
+    "DeletedAt": null,
+    "Soap": {
+      "Endpoint": "",
+      "Headers": "",
+      "RequestPayload": "",
+      "ResponsePayload": ""
+    },
+    "Rest": {
+      "Endpoint": "",
+      "Headers": "",
+      "RequestPayload": "",
+      "ResponsePayload": ""
+    },
+    "RestSource": {
+      "Endpoint": "https://source.example.com/api",
+      "Headers": "{ \"Source-Auth\": \"token123\" }",
+      "RequestPayload": "{ \"source\": \"data\" }",
+      "ResponsePayload": "{ \"source\": \"response\" }"
+    },
+    "RestDestination": {
+      "Endpoint": "https://destination.example.com/api",
+      "Headers": "{ \"Dest-Auth\": \"token456\" }",
+      "RequestPayload": "{ \"destination\": \"data\" }",
+      "ResponsePayload": "{ \"destination\": \"response\" }"
+    }
+  }
+]

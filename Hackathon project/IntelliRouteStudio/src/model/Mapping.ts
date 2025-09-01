@@ -5,6 +5,8 @@ export interface Mapping
         version: number,
         status: string,
         lastModified : Date,
+        isDeleted?: boolean,
+        deletedAt?: Date,
         soapEndpoint?: string,
         soapHeaders?: string,
         soapRequestPayload?: string,

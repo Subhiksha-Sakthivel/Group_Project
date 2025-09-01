@@ -4,5 +4,7 @@ export interface MappingTable
         operation: string,
         version: number,
         status: string,
-        lastModified : Date
+        lastModified : Date,
+        isDeleted?: boolean,
+        deletedAt?: Date
 }

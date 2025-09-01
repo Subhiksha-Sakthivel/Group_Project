@@ -1,7 +1,7 @@
 import { SetStateAction, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 import Badge from "../ui/badge/Badge";
-import { editMapping, deleteMapping, getMappingById, getTable, createMapping } from "../../service/mappingsService";
+import { editMapping, getMappingById, getTable, createMapping, softDeleteMapping, restoreMapping } from "../../service/mappingsService";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../../components/common/Button";
@@ -17,7 +17,8 @@ export default function MappingsTable() {
   const [mappings, setMappings] = useState<MappingTable[]>([]);
   const { isOpen: isCreateOpen, openModal: openCreateModal, closeModal: closeCreateModal } = useModal();
   const { isOpen: isEditOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
-  const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
+  const { isOpen: isSoftDeleteOpen, openModal: openSoftDeleteModal, closeModal: closeSoftDeleteModal } = useModal();
+  const { isOpen: isPreviewOpen, openModal: openPreviewModal, closeModal: closePreviewModal } = useModal();
   const [selectedMapping, setSelectedMapping] = useState<MappingTable | null>(null);
   const [editForm, setEditForm] = useState<Mapping | null>(null);
   const [activeTab, setActiveTab] = useState<"tab1" | "tab2">("tab1");
@@ -50,18 +51,41 @@ export default function MappingsTable() {
     console.log("Handle AI api calling here");
   }
 
-  const handleDeleteConfirm = async () => {
-  if (selectedMapping) {
-    try {
-      await deleteMapping(selectedMapping.id);
-      setMappings((prev) => prev.filter((m) => m.id !== selectedMapping.id));
-    } catch (error) {
-      console.error("Failed to delete Mapping:", error);
+    const handleSoftDeleteConfirm = async () => {
+    if (selectedMapping) {
+      try {
+        await softDeleteMapping(selectedMapping.id);
+        // Update the mapping status in the local state
+        setMappings((prev) =>
+          prev.map((m) =>
+            m.id === selectedMapping.id 
+              ? { ...m, status: "Disabled", isDeleted: true, deletedAt: new Date() }
+              : m
+          )
+        );
+      } catch (error) {
+        console.error("Failed to soft delete Mapping:", error);
+      }
+      setSelectedMapping(null);
+      closeSoftDeleteModal();
     }
-    setSelectedMapping(null);
-    closeDeleteModal();
-  }
-};
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await restoreMapping(id);
+      // Update the mapping status in the local state
+      setMappings((prev) =>
+        prev.map((m) =>
+          m.id === id 
+            ? { ...m, status: "Enabled", isDeleted: false, deletedAt: undefined }
+            : m
+        )
+      );
+    } catch (error) {
+      console.error("Failed to restore Mapping:", error);
+    }
+  };
 
 const handleEditConfirm = async () => {
   if (selectedMapping) {
@@ -168,10 +192,10 @@ const handleCreateConfirm = async () => {
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
                     <TableCell isHeader className="px-5 py-3 text-start">Operation</TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-start">Version</TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-start">Status</TableCell>
+                    <TableCell isHeader className="px-5 py-3 text-center">Version</TableCell>
+                    <TableCell isHeader className="px-5 py-3 text-center">Status</TableCell>
                     <TableCell isHeader className="px-5 py-3 text-start">Last Modified</TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-start">Actions</TableCell>
+                    <TableCell isHeader className="px-5 py-3 text-center">Actions</TableCell>
                   </TableRow>
                 </TableHeader>
 
@@ -179,62 +203,121 @@ const handleCreateConfirm = async () => {
                   {mappings.map((MappingTable, index) => (
                     <TableRow key={index}>
                       <TableCell className="px-5 py-4">{MappingTable.operation}</TableCell>
-                      <TableCell className="px-5 py-4">{MappingTable.version}</TableCell>
-                      <TableCell className="px-5 py-4">
-                        <Badge size="sm" color={getStatusColor(MappingTable.status)}>
-                          {MappingTable.status}
-                        </Badge>
+                      <TableCell className="px-5 py-4 text-center">{MappingTable.version}</TableCell>
+                      <TableCell className="px-5 py-4 text-center">
+                        <div className="flex flex-col gap-1">
+                          <Badge size="sm" color={getStatusColor(MappingTable.status)}>
+                            {MappingTable.status}
+                          </Badge>
+                          {MappingTable.isDeleted && MappingTable.deletedAt && (
+                            <div className="text-xs text-gray-500">
+                              Disabled: {new Date(MappingTable.deletedAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         {new Date(MappingTable.lastModified).toLocaleString()}
                       </TableCell>
-                      <TableCell className="px-5 py-4 flex gap-2">
-                        <button
-                          onClick={async () => {
-                            const fullMapping = await getMappingById(MappingTable.id);
-                            setEditForm(fullMapping);
-                            setSelectedMapping(MappingTable);
-                            openEditModal();
-                          }}
-                          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
-                        >
-                          <svg
-                            className="fill-current"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                      <TableCell className="px-5 py-4 text-center">
+                        <div className="flex gap-2 justify-center">
+                        {MappingTable.isDeleted ? (
+                          // Show preview button for deleted mappings
+                          <button
+                            onClick={async () => {
+                              const fullMapping = await getMappingById(MappingTable.id);
+                              setEditForm(fullMapping);
+                              setSelectedMapping(MappingTable);
+                              openPreviewModal();
+                            }}
+                            className="flex w-full items-center justify-center gap-2 rounded-full border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 shadow-theme-xs hover:bg-blue-100 hover:text-blue-800 dark:border-blue-700 dark:bg-blue-800/20 dark:text-blue-400 dark:hover:bg-blue-800/30 lg:inline-flex lg:w-auto"
+                            title="Preview Mapping"
                           >
-                            <path
-                              fillRule="evenodd"
-                              clipRule="evenodd"
-                              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedMapping(MappingTable);
-                            openDeleteModal();
-                          }}
-                          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
-                        >
-                          <svg
-                            className="fill-current"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                            <svg
+                              className="fill-current"
+                              width="18"
+                              height="18"
+                              viewBox="0 0 18 18"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M9 3C4.5 3 0.75 6.75 0.75 12C0.75 17.25 4.5 21 9 21C13.5 21 17.25 17.25 17.25 12C17.25 6.75 13.5 3 9 3ZM9 19.5C5.4 19.5 2.25 16.35 2.25 12C2.25 7.65 5.4 4.5 9 4.5C12.6 4.5 15.75 7.65 15.75 12C15.75 16.35 12.6 19.5 9 19.5ZM9 6C6.75 6 4.5 8.25 4.5 12C4.5 15.75 6.75 18 9 18C11.25 18 13.5 15.75 13.5 12C13.5 8.25 11.25 6 9 6ZM9 16.5C7.35 16.5 6 15.15 6 13.5C6 11.85 7.35 10.5 9 10.5C10.65 10.5 12 11.85 12 13.5C12 15.15 10.65 16.5 9 16.5Z"
+                                fill=""
+                              />
+                            </svg>
+                          </button>
+                        ) : (
+                          // Show edit button for active mappings
+                          <button
+                            onClick={async () => {
+                              const fullMapping = await getMappingById(MappingTable.id);
+                              setEditForm(fullMapping);
+                              setSelectedMapping(MappingTable);
+                              openEditModal();
+                            }}
+                            className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+                            title="Edit Mapping"
                           >
-                            <path
-                              d="M7.5 3.333V2.5C7.5 1.57953 8.24619 0.833344 9.16667 0.833344H10.8333C11.7538 0.833344 12.5 1.57953 12.5 2.5V3.33334H16.6667C17.1269 3.33334 17.5 3.70643 17.5 4.16668C17.5 4.62692 17.1269 5.00001 16.6667 5.00001H3.33333C2.8731 5.00001 2.5 4.62692 2.5 4.16668C2.5 3.70643 2.8731 3.33334 3.33333 3.33334H7.5ZM4.16667 6.66668H15.8333L15.197 17.1803C15.1518 17.9369 14.5192 18.5417 13.7619 18.5417H6.23814C5.48083 18.5417 4.84823 17.9369 4.80302 17.1803L4.16667 6.66668Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              className="fill-current"
+                              width="18"
+                              height="18"
+                              viewBox="0 0 18 18"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
+                                fill=""
+                              />
+                            </svg>
+                          </button>
+                        )}
+                        {MappingTable.isDeleted ? (
+                          // Show restore button for deleted mappings with new icon
+                          <button
+                            onClick={() => handleRestore(MappingTable.id)}
+                            className="flex w-full items-center justify-center gap-2 rounded-full border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 shadow-theme-xs hover:bg-green-100 hover:text-green-800 dark:border-green-700 dark:bg-green-800/20 dark:text-green-400 dark:hover:bg-green-800/30 lg:inline-flex lg:w-auto"
+                            title="Restore Mapping"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-5 h-5"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c5.07 0 9.25-3.79 9.95-8.72.08-.54-.35-1.02-.9-1.02-.45 0-.84.33-.91.77C19.67 17.37 16.17 20.5 12 20.5c-4.69 0-8.5-3.81-8.5-8.5S7.31 3.5 12 3.5c2.35 0 4.47.96 5.97 2.5H15c-.55 0-1 .45-1 1s.45 1 1 1h5c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1v2.11C17.83 2.84 15.07 2 12 2Z" />
+                            </svg>
+                          </button>
+                        ) : (
+                          // Show soft delete button for active mappings
+                          <button
+                            onClick={() => {
+                              setSelectedMapping(MappingTable);
+                              openSoftDeleteModal();
+                            }}
+                            className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+                            title="Disable Mapping"
+                          >
+                            <svg
+                              className="fill-current"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M7.5 3.333V2.5C7.5 1.57953 8.24619 0.833344 9.16667 0.833344H10.8333C11.7538 0.833344 12.5 1.57953 12.5 2.5V3.33334H16.6667C17.1269 3.33334 17.5 3.70643 17.5 4.16668C17.5 4.62692 17.1269 5.00001 16.6667 5.00001H3.33333C2.8731 5.00001 2.5 4.62692 2.5 4.16668C2.5 3.70643 2.8731 3.33334 3.33333 3.33334H7.5ZM4.16667 6.66668H15.8333L15.197 17.1803C15.1518 17.9369 14.5192 18.5417 13.7619 18.5417H6.23814C5.48083 18.5417 4.84823 17.9369 4.80302 17.1803L4.16667 6.66668Z"
+                                fill=""
+                              />
+                            </svg>
+                          </button>
+                        )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -716,16 +799,183 @@ const handleCreateConfirm = async () => {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={isDeleteOpen} onClose={closeDeleteModal} className="max-w-sm m-4">
-        <div className="p-6 bg-white rounded-3xl dark:bg-gray-900">
-          <h4 className="text-lg font-semibold mb-4">Are you sure you want to delete?</h4>
-          <div className="flex justify-end gap-3">
-            <Button size="sm" variant="outline" onClick={closeDeleteModal}>Cancel</Button>
-            <Button size="sm" variant="primary" onClick={handleDeleteConfirm}>OK</Button>
-          </div>
-        </div>
-      </Modal>
+             {/* Soft Delete Confirmation Modal */}
+       <Modal isOpen={isSoftDeleteOpen} onClose={closeSoftDeleteModal} className="max-w-sm m-4">
+         <div className="p-6 bg-white rounded-3xl dark:bg-gray-900">
+           <h4 className="text-lg font-semibold mb-4 text-orange-600">Disable Mapping</h4>
+           <p className="text-gray-600 mb-4">
+             This will disable the mapping and hide it from active operations. 
+             The mapping will be permanently deleted after 30 days if not restored.
+           </p>
+           <div className="flex justify-end gap-3">
+             <Button size="sm" variant="outline" onClick={closeSoftDeleteModal}>Cancel</Button>
+             <Button size="sm" variant="primary" onClick={handleSoftDeleteConfirm} className="bg-orange-500 hover:bg-orange-600">Disable</Button>
+           </div>
+         </div>
+       </Modal>
+
+       {/* Preview Modal for Deleted Mappings */}
+       <Modal isOpen={isPreviewOpen} onClose={closePreviewModal} className="max-w-[700px] m-4">
+         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
+           <div className="flex items-center justify-between px-2 pr-14 mb-6">
+             <h4 className="inline-block mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+               Preview Mapping (Read Only)
+             </h4>
+           </div>
+
+           <div className="px-2 overflow-y-auto custom-scrollbar">
+             <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2 mb-6">
+               {/* General Fields */}
+               <div>
+                 <Label>Operation</Label>
+                 <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                   {editForm?.operation || ""}
+                 </div>
+               </div>
+
+               <div>
+                 <Label>Version</Label>
+                 <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                   {editForm?.version || ""}
+                 </div>
+               </div>
+
+               <div>
+                 <Label>Status</Label>
+                 <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                   {editForm?.status || ""}
+                 </div>
+               </div>
+             </div>
+
+             {/* SOAP Configuration */}
+             {editForm?.soapEndpoint && (
+               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2 mb-6">
+                 <div>
+                   <Label>SOAP Endpoint</Label>
+                   <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.soapEndpoint}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Endpoint</Label>
+                   <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restEndpoint}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>SOAP Headers</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.soapHeaders}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Headers</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restHeaders}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>SOAP Request Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.soapRequestPayload}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Request Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restRequestPayload}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>SOAP Response Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.soapResponsePayload}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Response Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restResponsePayload}
+                   </div>
+                 </div>
+               </div>
+             )}
+
+             {/* REST Source/Destination Configuration */}
+             {editForm?.restSourceEndpoint && (
+               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                 <div>
+                   <Label>REST Source Endpoint</Label>
+                   <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restSourceEndpoint}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Destination Endpoint</Label>
+                   <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restDestinationEndpoint}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Source Headers</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restSourceHeaders}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Destination Headers</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restDestinationHeaders}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Source Request Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restSourceRequestPayload}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Destination Request Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restDestinationRequestPayload}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Source Response Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restSourceResponsePayload}
+                   </div>
+                 </div>
+
+                 <div>
+                   <Label>REST Destination Response Payload</Label>
+                   <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
+                     {editForm.restDestinationResponsePayload}
+                   </div>
+                 </div>
+               </div>
+             )}
+           </div>
+
+           <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
+             <Button type="button" onClick={closePreviewModal}>Close</Button>
+           </div>
+         </div>
+       </Modal>
     </>
   );
 }

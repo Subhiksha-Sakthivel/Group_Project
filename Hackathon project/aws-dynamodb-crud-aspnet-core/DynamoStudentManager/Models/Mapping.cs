@@ -3,28 +3,57 @@ using System;
 
 namespace YourNamespace.Models
 {
+    public class RestConfig
+    {
+        [DynamoDBProperty]
+        public string? Endpoint { get; set; }
+
+        [DynamoDBProperty]
+        public string? Headers { get; set; }
+
+        [DynamoDBProperty]
+        public string? RequestPayload { get; set; }
+
+        [DynamoDBProperty]
+        public string? ResponsePayload { get; set; }
+    }
+
     [DynamoDBTable("Mappings")]
     public class Mapping
     {
-        [DynamoDBHashKey] // Partition key
-        public string Id { get; set; }
+        [DynamoDBHashKey] 
+        public string Id { get; set; } = string.Empty;
 
-        public string Operation { get; set; }
+        [DynamoDBProperty]
+        public string Operation { get; set; } = string.Empty;
+
+        [DynamoDBProperty]
         public int Version { get; set; }
-        public string Status { get; set; } // e.g. "Enabled", "Disabled", "Ready for Review"
 
+        [DynamoDBProperty]
+        public string Status { get; set; } = string.Empty;
+
+        [DynamoDBProperty]
         public DateTime LastModified { get; set; }
 
-        // SOAP side
-        public string SoapEndpoint { get; set; }
-        public string SoapHeaders { get; set; }
-        public string SoapRequestPayload { get; set; }
-        public string SoapResponsePayload { get; set; }
+        [DynamoDBProperty]
+        public DateTime? DeletedAt { get; set; }
 
-        // REST side
-        public string RestEndpoint { get; set; }
-        public string RestHeaders { get; set; }
-        public string RestRequestPayload { get; set; }
-        public string RestResponsePayload { get; set; }
+        [DynamoDBProperty]
+        public bool IsDeleted { get; set; }
+
+        // Screen A
+        [DynamoDBProperty]
+        public RestConfig? Soap { get; set; }
+
+        [DynamoDBProperty]
+        public RestConfig? Rest { get; set; }
+
+        // Screen B
+        [DynamoDBProperty]
+        public RestConfig? RestSource { get; set; }
+
+        [DynamoDBProperty]
+        public RestConfig? RestDestination { get; set; }
     }
 }
