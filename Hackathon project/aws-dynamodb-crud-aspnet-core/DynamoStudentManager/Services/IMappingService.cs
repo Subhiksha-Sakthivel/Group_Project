@@ -8,7 +8,7 @@ namespace YourNamespace.Services
     public interface IMappingService
     {
         Task<IEnumerable<object>> GetAllAsync();
-        Task<IEnumerable<MappingTable>> GetTableAsync();
+        Task<IEnumerable<MappingTableDto>> GetTableAsync();
         Task<object?> GetByIdAsync(string id);
         Task<object> CreateAsync(MappingDto dto);
         Task<object?> UpdateAsync(string id, MappingDto dto);

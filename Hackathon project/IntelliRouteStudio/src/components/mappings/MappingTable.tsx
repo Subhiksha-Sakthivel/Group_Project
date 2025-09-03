@@ -11,7 +11,9 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { MappingTable } from "../../model/MappingTable";
-import { Mapping } from "../../model/Mapping";
+import { Mapping, RestConfig } from "../../model/Mapping";
+import Alert from "../ui/alert/Alert";
+import { useNotifications } from "../../context/NotificationContext";
 
 export default function MappingsTable() {
   const [mappings, setMappings] = useState<MappingTable[]>([]);
@@ -22,29 +24,62 @@ export default function MappingsTable() {
   const [selectedMapping, setSelectedMapping] = useState<MappingTable | null>(null);
   const [editForm, setEditForm] = useState<Mapping | null>(null);
   const [activeTab, setActiveTab] = useState<"tab1" | "tab2">("tab1");
+  const { addNotification } = useNotifications();
   const [createForm, setCreateForm] = useState<Mapping>({
     id: "", // will be auto-generated
     operation: "",
     version: 1,
     status: "Enabled",
     lastModified: new Date(),
-    soapEndpoint: "",
-    soapHeaders: "",
-    soapRequestPayload: "",
-    soapResponsePayload: "",
-    restEndpoint: "",
-    restHeaders: "",
-    restRequestPayload: "",
-    restResponsePayload: "",
-    restSourceEndpoint: "",
-    restSourceHeaders: "",
-    restSourceRequestPayload: "",
-    restSourceResponsePayload: "",
-    restDestinationEndpoint: "",
-    restDestinationHeaders: "",
-    restDestinationRequestPayload: "",
-    restDestinationResponsePayload: ""
+    soap: {
+      endpoint: "",
+      headers: "",
+      requestPayload: "",
+      responsePayload: ""},
+    rest : {
+      endpoint: "",
+      headers: "",
+      requestPayload: "",
+      responsePayload: ""},
+    restSource : {
+      endpoint: "",
+      headers: "",
+      requestPayload: "",
+      responsePayload: ""},
+    restDestination : {
+      endpoint: "",
+      headers: "",
+      requestPayload: "",
+      responsePayload: ""},
   });
+
+  // Alert state
+  const [alert, setAlert] = useState<
+    | { variant: "success" | "error" | "warning" | "info"; title: string; message: string }
+    | null
+  >(null);
+
+  const showSuccess = (title: string, message: string) => {
+    setAlert({ variant: "success", title, message });
+    // Add to notification system
+    addNotification({ variant: "success", title, message });
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setAlert(null);
+    }, 5000);
+  };
+  
+  const showError = (title: string, message: string) => {
+    setAlert({ variant: "error", title, message });
+    // Add to notification system
+    addNotification({ variant: "error", title, message });
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setAlert(null);
+    }, 5000);
+  };
+  
+  const clearAlert = () => setAlert(null);
 
 
   function handleAI(): void {
@@ -63,8 +98,10 @@ export default function MappingsTable() {
               : m
           )
         );
+        showSuccess("Mapping disabled", `Mapping ${selectedMapping.operation} is disabled.`);
       } catch (error) {
         console.error("Failed to soft delete Mapping:", error);
+        showError("Failed to disable mapping", String(error));
       }
       setSelectedMapping(null);
       closeSoftDeleteModal();
@@ -82,8 +119,10 @@ export default function MappingsTable() {
             : m
         )
       );
+      showSuccess("Mapping restored", "The mapping is active again.");
     } catch (error) {
       console.error("Failed to restore Mapping:", error);
+      showError("Failed to restore mapping", String(error));
     }
   };
 
@@ -93,11 +132,21 @@ const handleEditConfirm = async () => {
       await editMapping(selectedMapping.id,editForm!);
       setMappings((prev) =>
         prev.map((m) =>
-          m.id === selectedMapping.id ? { ...m, ...editForm } : m
+          m.id === selectedMapping.id
+            ? {
+                ...m,
+                operation: editForm?.operation ?? m.operation,
+                version: editForm?.version ?? m.version,
+                status: editForm?.status ?? m.status,
+                lastModified: new Date(),
+              }
+            : m
         )
       );
+      showSuccess("Mapping updated", "Changes saved successfully.");
     } catch (error) {
       console.error("Failed to edit Mapping:", error);
+      showError("Failed to update mapping", String(error));
     }
     setSelectedMapping(null);
     closeEditModal();
@@ -131,21 +180,63 @@ const handleCreateConfirm = async () => {
       version: 1,
       status: "Enabled",
       lastModified: new Date(),
-      soapEndpoint: "",
-      soapHeaders: "",
-      soapRequestPayload: "",
-      soapResponsePayload: "",
-      restEndpoint: "",
-      restHeaders: "",
-      restRequestPayload: "",
-      restResponsePayload: "",
+      soap: {
+        endpoint: "",
+        headers: "",
+        requestPayload: "",
+        responsePayload: ""},
+      rest : {
+        endpoint: "",
+        headers: "",
+        requestPayload: "",
+        responsePayload: ""},
+      restSource : {
+        endpoint: "",
+        headers: "",
+        requestPayload: "",
+        responsePayload: ""},
+      restDestination : {
+        endpoint: "",
+        headers: "",
+        requestPayload: "",
+        responsePayload: ""},
     });
 
     closeCreateModal();
+    showSuccess("Mapping created", `Created ${newMapping.operation}.`);
   } catch (error) {
     console.error("Failed to create Mapping:", error);
+    showError("Failed to create mapping", String(error));
   }
 };
+
+  const updateNested = (key: string, subKey: string, value: string) => {
+    setEditForm(prev => {
+      if (!prev) return null;
+      const currentSection = prev[key as keyof Mapping] as RestConfig | null;
+      if (!currentSection) return prev;
+      return {
+        ...prev,
+        [key]: {
+          ...currentSection,
+          [subKey]: value
+        }
+      };
+    });
+  };
+
+  const updateCreateNested = (key: string, subKey: string, value: string) => {
+    setCreateForm(prev => {
+      const currentSection = prev[key as keyof Mapping] as RestConfig;
+      return {
+        ...prev,
+        [key]: {
+          ...currentSection,
+          [subKey]: value
+        }
+      };
+    });
+  };
 
 
   useEffect(() => {
@@ -153,9 +244,11 @@ const handleCreateConfirm = async () => {
     .then((data: SetStateAction<MappingTable[]>) => {
       console.log("API getMappings response:", data);
       setMappings(data);
+      showSuccess("Loaded", "Mappings loaded successfully.");
     })
     .catch((error) => {
       console.error("Failed to fetch mappings:", error);
+      showError("Failed to load mappings", String(error));
     });
 }, []);
 
@@ -170,6 +263,23 @@ const handleCreateConfirm = async () => {
 
   return (
     <>
+      {alert && (
+        <div 
+          className="fixed top-20 right-4 z-50 max-w-sm animate-in slide-in-from-right-2 duration-300"
+        >
+          <div className="relative">
+            <button
+              onClick={clearAlert}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <Alert variant={alert.variant} title={alert.title} message={alert.message} />
+          </div>
+        </div>
+      )}
       <PageMeta
         title="React.js Basic Tables Dashboard | TailAdmin - Next.js Admin Dashboard Template"
         description="This is React.js Basic Tables Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
@@ -406,8 +516,8 @@ const handleCreateConfirm = async () => {
                       <Label>SOAP Endpoint</Label>
                       <input
                         type="text"
-                        value={createForm.soapEndpoint}
-                        onChange={(e) => setCreateForm({ ...createForm, soapEndpoint: e.target.value })}
+                        value={createForm.soap?.endpoint || ""}
+                        onChange={(e) => updateCreateNested("soap", "endpoint", e.target.value)}
                         placeholder="/GetCustomerList"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -417,8 +527,8 @@ const handleCreateConfirm = async () => {
                       <Label>REST Endpoint</Label>
                       <input
                         type="text"
-                        value={createForm.restEndpoint}
-                        onChange={(e) => setCreateForm({ ...createForm, restEndpoint: e.target.value })}
+                        value={createForm.rest?.endpoint || ""}
+                        onChange={(e) => updateCreateNested("rest", "endpoint", e.target.value)}
                         placeholder="/Customers"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -427,8 +537,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>SOAP Headers</Label>
                       <textarea
-                        value={createForm.soapHeaders}
-                        onChange={(e) => setCreateForm({ ...createForm, soapHeaders: e.target.value })}
+                        value={createForm.soap?.headers || ""}
+                        onChange={(e) => updateCreateNested("soap", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -436,8 +546,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Headers</Label>
                       <textarea
-                        value={createForm.restHeaders}
-                        onChange={(e) => setCreateForm({ ...createForm, restHeaders: e.target.value })}
+                        value={createForm.rest?.headers || ""}
+                        onChange={(e) => updateCreateNested("rest", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -445,8 +555,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>SOAP Request Payload</Label>
                       <textarea
-                        value={createForm.soapRequestPayload}
-                        onChange={(e) => setCreateForm({ ...createForm, soapRequestPayload: e.target.value })}
+                        value={createForm.soap?.requestPayload || ""}
+                        onChange={(e) => updateCreateNested("soap", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -454,8 +564,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Request Payload</Label>
                       <textarea
-                        value={createForm.restRequestPayload}
-                        onChange={(e) => setCreateForm({ ...createForm, restRequestPayload: e.target.value })}
+                        value={createForm.rest?.requestPayload || ""}
+                        onChange={(e) => updateCreateNested("rest", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -463,8 +573,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>SOAP Response Payload</Label>
                       <textarea
-                        value={createForm.soapResponsePayload}
-                        onChange={(e) => setCreateForm({ ...createForm, soapResponsePayload: e.target.value })}
+                        value={createForm.soap?.responsePayload || ""}
+                        onChange={(e) => updateCreateNested("soap", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -472,8 +582,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Response Payload</Label>
                       <textarea
-                        value={createForm.restResponsePayload}
-                        onChange={(e) => setCreateForm({ ...createForm, restResponsePayload: e.target.value })}
+                        value={createForm.rest?.responsePayload || ""}
+                        onChange={(e) => updateCreateNested("rest", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -490,8 +600,8 @@ const handleCreateConfirm = async () => {
                       <Label>REST Source Endpoint</Label>
                       <input
                         type="text"
-                        value={createForm.restSourceEndpoint}
-                        onChange={(e) => setCreateForm({ ...createForm, restSourceEndpoint: e.target.value })}
+                        value={createForm.restSource?.endpoint || ""}
+                        onChange={(e) => updateCreateNested("restSource", "endpoint", e.target.value)}
                         placeholder="/SourceCustomers"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -501,8 +611,8 @@ const handleCreateConfirm = async () => {
                       <Label>REST Destination Endpoint</Label>
                       <input
                         type="text"
-                        value={createForm.restDestinationEndpoint}
-                        onChange={(e) => setCreateForm({ ...createForm, restDestinationEndpoint: e.target.value })}
+                        value={createForm.restDestination?.endpoint || ""}
+                        onChange={(e) => updateCreateNested("restDestination", "endpoint", e.target.value)}
                         placeholder="/DestinationCustomers"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -511,8 +621,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Source Headers</Label>
                       <textarea
-                        value={createForm.restSourceHeaders}
-                        onChange={(e) => setCreateForm({ ...createForm, restSourceHeaders: e.target.value })}
+                        value={createForm.restSource?.headers || ""}
+                        onChange={(e) => updateCreateNested("restSource", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -520,8 +630,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Destination Headers</Label>
                       <textarea
-                        value={createForm.restDestinationHeaders}
-                        onChange={(e) => setCreateForm({ ...createForm, restDestinationHeaders: e.target.value })}
+                        value={createForm.restDestination?.headers || ""}
+                        onChange={(e) => updateCreateNested("restDestination", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -529,8 +639,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Source Request Payload</Label>
                       <textarea
-                        value={createForm.restSourceRequestPayload}
-                        onChange={(e) => setCreateForm({ ...createForm, restSourceRequestPayload: e.target.value })}
+                        value={createForm.restSource?.requestPayload || ""}
+                        onChange={(e) => updateCreateNested("restSource", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -538,16 +648,16 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Destination Request Payload</Label>
                       <textarea
-                        value={createForm.restDestinationRequestPayload}
-                        onChange={(e) => setCreateForm({ ...createForm, restDestinationRequestPayload: e.target.value })}
+                        value={createForm.restDestination?.requestPayload || ""}
+                        onChange={(e) => updateCreateNested("restDestination", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
                     <div>
                       <Label>REST Source Response Payload</Label>
                       <textarea
-                        value={createForm.restSourceResponsePayload}
-                        onChange={(e) => setCreateForm({ ...createForm, restSourceResponsePayload: e.target.value })}
+                        value={createForm.restSource?.responsePayload || ""}
+                        onChange={(e) => updateCreateNested("restSource", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -555,8 +665,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Destination Response Payload</Label>
                       <textarea
-                        value={createForm.restDestinationResponsePayload}
-                        onChange={(e) => setCreateForm({ ...createForm, restDestinationResponsePayload: e.target.value })}
+                        value={createForm.restDestination?.responsePayload || ""}
+                        onChange={(e) => updateCreateNested("restDestination", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -625,14 +735,14 @@ const handleCreateConfirm = async () => {
               </div>
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                 {/* Tab1 Fields (SOAP↔REST) */}
-                {editForm?.soapEndpoint || editForm?.restEndpoint ? (
+                {editForm?.soap?.endpoint || editForm?.rest?.endpoint ? (
                   <>
                     <div>
                       <Label>SOAP Endpoint</Label>
                       <input
                         type="text"
-                        value={editForm?.soapEndpoint || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, soapEndpoint: e.target.value })}
+                        value={editForm?.soap?.endpoint || ""}
+                        onChange={(e) => updateNested("soap", "endpoint", e.target.value)}
                         placeholder="/GetCustomerList"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -642,8 +752,8 @@ const handleCreateConfirm = async () => {
                       <Label>REST Endpoint</Label>
                       <input
                         type="text"
-                        value={editForm?.restEndpoint || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, restEndpoint: e.target.value })}
+                        value={editForm?.rest?.endpoint || ""}
+                        onChange={(e) => updateNested("rest", "endpoint", e.target.value)}
                         placeholder="/Customers"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -652,8 +762,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>SOAP Headers</Label>
                       <textarea
-                        value={editForm?.soapHeaders || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, soapHeaders: e.target.value })}
+                        value={editForm?.soap?.headers || ""}
+                        onChange={(e) => updateNested("soap", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -661,8 +771,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Headers</Label>
                       <textarea
-                        value={editForm?.restHeaders || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, restHeaders: e.target.value })}
+                        value={editForm?.rest?.headers || ""}
+                        onChange={(e) => updateNested("rest", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -670,8 +780,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>SOAP Request Payload</Label>
                       <textarea
-                        value={editForm?.soapRequestPayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, soapRequestPayload: e.target.value })}
+                        value={editForm?.soap?.requestPayload || ""}
+                        onChange={(e) => updateNested("soap", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -679,8 +789,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Request Payload</Label>
                       <textarea
-                        value={editForm?.restRequestPayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, restRequestPayload: e.target.value })}
+                        value={editForm?.rest?.requestPayload || ""}
+                        onChange={(e) => updateNested("rest", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -688,8 +798,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>SOAP Response Payload</Label>
                       <textarea
-                        value={editForm?.soapResponsePayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, soapResponsePayload: e.target.value })}
+                        value={editForm?.soap?.responsePayload || ""}
+                        onChange={(e) => updateNested("soap", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -697,8 +807,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Response Payload</Label>
                       <textarea
-                        value={editForm?.restResponsePayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, restResponsePayload: e.target.value })}
+                        value={editForm?.rest?.responsePayload || ""}
+                        onChange={(e) => updateNested("rest", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -706,14 +816,14 @@ const handleCreateConfirm = async () => {
                 ) : null}
 
                 {/* Tab2 Fields (REST Source↔REST Destination) */}
-                {editForm?.restSourceEndpoint || editForm?.restDestinationEndpoint ? (
+                {editForm?.restSource?.endpoint || editForm?.restDestination?.endpoint ? (
                   <>
                     <div>
                       <Label>REST Source Endpoint</Label>
                       <input
                         type="text"
-                        value={editForm?.restSourceEndpoint || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, restSourceEndpoint: e.target.value })}
+                        value={editForm?.restSource?.endpoint || ""}
+                        onChange={(e) => updateNested("restSource", "endpoint", e.target.value)}
                         placeholder="/SourceCustomers"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -723,10 +833,8 @@ const handleCreateConfirm = async () => {
                       <Label>REST Destination Endpoint</Label>
                       <input
                         type="text"
-                        value={editForm?.restDestinationEndpoint || ""}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm!, restDestinationEndpoint: e.target.value })
-                        }
+                        value={editForm?.restDestination?.endpoint || ""}
+                        onChange={(e) => updateNested("restDestination", "endpoint", e.target.value)}
                         placeholder="/DestinationCustomers"
                         className="h-11 w-[285px] rounded-lg border px-3"
                       />
@@ -735,8 +843,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Source Headers</Label>
                       <textarea
-                        value={editForm?.restSourceHeaders || ""}
-                        onChange={(e) => setEditForm({ ...editForm!, restSourceHeaders: e.target.value })}
+                        value={editForm?.restSource?.headers || ""}
+                        onChange={(e) => updateNested("restSource", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -744,10 +852,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Destination Headers</Label>
                       <textarea
-                        value={editForm?.restDestinationHeaders || ""}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm!, restDestinationHeaders: e.target.value })
-                        }
+                        value={editForm?.restDestination?.headers || ""}
+                        onChange={(e) => updateNested("restDestination", "headers", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -755,8 +861,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Source Request Payload</Label>
                       <textarea
-                        value={editForm.restSourceRequestPayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm, restSourceRequestPayload: e.target.value })}
+                        value={editForm?.restSource?.requestPayload || ""}
+                        onChange={(e) => updateNested("restSource", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -764,16 +870,16 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Destination Request Payload</Label>
                       <textarea
-                        value={editForm.restDestinationRequestPayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm, restDestinationRequestPayload: e.target.value })}
+                        value={editForm?.restDestination?.requestPayload || ""}
+                        onChange={(e) => updateNested("restDestination", "requestPayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
                     <div>
                       <Label>REST Source Response Payload</Label>
                       <textarea
-                        value={editForm.restSourceResponsePayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm, restSourceResponsePayload: e.target.value })}
+                        value={editForm?.restSource?.responsePayload || ""}
+                        onChange={(e) => updateNested("restSource", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -781,8 +887,8 @@ const handleCreateConfirm = async () => {
                     <div>
                       <Label>REST Destination Response Payload</Label>
                       <textarea
-                        value={editForm.restDestinationResponsePayload || ""}
-                        onChange={(e) => setEditForm({ ...editForm, restDestinationResponsePayload: e.target.value })}
+                        value={editForm?.restDestination?.responsePayload || ""}
+                        onChange={(e) => updateNested("restDestination", "responsePayload", e.target.value)}
                         className="h-20 w-[285px] rounded-lg border px-3"
                       />
                     </div>
@@ -849,122 +955,122 @@ const handleCreateConfirm = async () => {
              </div>
 
              {/* SOAP Configuration */}
-             {editForm?.soapEndpoint && (
+             {editForm?.soap?.endpoint && (
                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2 mb-6">
                  <div>
                    <Label>SOAP Endpoint</Label>
                    <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.soapEndpoint}
+                     {editForm.soap.endpoint}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Endpoint</Label>
                    <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restEndpoint}
+                     {editForm.rest?.endpoint}
                    </div>
                  </div>
 
                  <div>
                    <Label>SOAP Headers</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.soapHeaders}
+                     {editForm.soap?.headers}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Headers</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restHeaders}
+                     {editForm.rest?.headers}
                    </div>
                  </div>
 
                  <div>
                    <Label>SOAP Request Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.soapRequestPayload}
+                     {editForm.soap?.requestPayload}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Request Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restRequestPayload}
+                     {editForm.rest?.requestPayload}
                    </div>
                  </div>
 
                  <div>
                    <Label>SOAP Response Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.soapResponsePayload}
+                     {editForm.soap?.responsePayload}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Response Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restResponsePayload}
+                     {editForm.rest?.responsePayload}
                    </div>
                  </div>
                </div>
              )}
 
              {/* REST Source/Destination Configuration */}
-             {editForm?.restSourceEndpoint && (
+             {editForm?.restSource?.endpoint && (
                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                  <div>
                    <Label>REST Source Endpoint</Label>
                    <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restSourceEndpoint}
+                     {editForm.restSource.endpoint}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Destination Endpoint</Label>
                    <div className="h-11 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restDestinationEndpoint}
+                     {editForm.restDestination?.endpoint}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Source Headers</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restSourceHeaders}
+                     {editForm.restSource?.headers}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Destination Headers</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restDestinationHeaders}
+                     {editForm.restDestination?.headers}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Source Request Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restSourceRequestPayload}
+                     {editForm.restSource?.requestPayload}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Destination Request Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restDestinationRequestPayload}
+                     {editForm.restDestination?.requestPayload}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Source Response Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restSourceResponsePayload}
+                     {editForm.restSource?.responsePayload}
                    </div>
                  </div>
 
                  <div>
                    <Label>REST Destination Response Payload</Label>
                    <div className="h-20 w-[285px] rounded-lg border px-3 py-2 bg-gray-50 text-gray-700">
-                     {editForm.restDestinationResponsePayload}
+                     {editForm.restDestination?.responsePayload}
                    </div>
                  </div>
                </div>

@@ -37,7 +37,7 @@ import { Mapping } from "../model/Mapping";
 const base_url = 'http://localhost:5214';
 
 export async function getMappings() {
-  const response = await fetch(base_url+'http/api/Mappings', { method: "GET", headers: { 'Access-Control-Allow-Origin': 'true'} });
+  const response = await fetch(base_url+'/api/Mappings', { method: "GET", headers: { 'Access-Control-Allow-Origin': 'true'} });
   if (!response.ok) {
     throw new Error(`Failed to get all mappings: ${response.statusText}`);
   }

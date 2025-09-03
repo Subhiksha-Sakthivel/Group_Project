@@ -19,10 +19,10 @@ namespace YourNamespace.Models
         public string Status { get; set; } = string.Empty; // e.g. "Enabled", "Disabled", "Ready for Review"
 
         [DynamoDBProperty]
-        public DateTime LastModified { get; set; }
+        public string? LastModified { get; set; }
 
         [DynamoDBProperty]
-        public DateTime? DeletedAt { get; set; }
+        public string? DeletedAt { get; set; }
 
         [DynamoDBProperty]
         public bool IsDeleted { get; set; }

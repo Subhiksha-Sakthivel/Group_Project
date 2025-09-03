@@ -21,39 +21,70 @@ namespace YourNamespace.Services
         {
             var items = await _repo.GetAllAsync();
             return items.OrderBy(m => m.Operation).Select(m => (object)new {
-                m.Id, m.Operation, m.Version, m.Status, m.LastModified, 
+                m.Id, m.Operation, m.Version, m.Status, 
+                LastModified = DateTime.TryParse(m.LastModified, out DateTime lastMod) ? lastMod : DateTime.UtcNow,
                 RestEndpoint = m.Rest?.Endpoint, 
                 SoapEndpoint = m.Soap?.Endpoint
             });
         }
 
-        public async Task<IEnumerable<MappingTable>> GetTableAsync()
+        public async Task<IEnumerable<MappingTableDto>> GetTableAsync()
         {
-            return await _repo.GetTableAsync();
+            var items = await _repo.GetTableAsync();
+            return items.Select(m => new MappingTableDto
+            {
+                Id = m.Id ?? string.Empty,
+                Operation = m.Operation ?? string.Empty,
+                Version = m.Version,
+                Status = m.Status ?? string.Empty,
+                LastModifiedString = m.LastModified ?? string.Empty,
+                DeletedAtString = m.DeletedAt,
+                IsDeleted = m.IsDeleted
+            });
         }
 
         public async Task<object?> GetByIdAsync(string id)
         {
             var m = await _repo.GetByIdAsync(id);
             if (m == null) return null;
-            return new {
-                m.Id, m.Operation, m.Version, m.Status, m.LastModified,
-                SoapEndpoint = m.Soap?.Endpoint, 
-                SoapHeaders = m.Soap?.Headers, 
-                SoapRequestPayload = m.Soap?.RequestPayload, 
-                SoapResponsePayload = m.Soap?.ResponsePayload,
-                RestEndpoint = m.Rest?.Endpoint, 
-                RestHeaders = m.Rest?.Headers, 
-                RestRequestPayload = m.Rest?.RequestPayload, 
-                RestResponsePayload = m.Rest?.ResponsePayload,
-                RestSourceEndpoint = m.RestSource?.Endpoint,
-                RestSourceHeaders = m.RestSource?.Headers,
-                RestSourceRequestPayload = m.RestSource?.RequestPayload,
-                RestSourceResponsePayload = m.RestSource?.ResponsePayload,
-                RestDestinationEndpoint = m.RestDestination?.Endpoint,
-                RestDestinationHeaders = m.RestDestination?.Headers,
-                RestDestinationRequestPayload = m.RestDestination?.RequestPayload,
-                RestDestinationResponsePayload = m.RestDestination?.ResponsePayload
+            // Return a MappingDto-shaped object so the client can edit and PUT the same shape
+            return new MappingDto
+            {
+                Id = m.Id ?? string.Empty,
+                Operation = m.Operation ?? string.Empty,
+                Version = m.Version,
+                Status = m.Status ?? string.Empty,
+                LastModifiedString = m.LastModified ?? string.Empty,
+                IsDeleted = m.IsDeleted,
+                DeletedAtString = m.DeletedAt,
+                Soap = m.Soap == null ? null : new RestConfigDto
+                {
+                    Endpoint = m.Soap.Endpoint,
+                    Headers = m.Soap.Headers,
+                    RequestPayload = m.Soap.RequestPayload,
+                    ResponsePayload = m.Soap.ResponsePayload
+                },
+                Rest = m.Rest == null ? null : new RestConfigDto
+                {
+                    Endpoint = m.Rest.Endpoint,
+                    Headers = m.Rest.Headers,
+                    RequestPayload = m.Rest.RequestPayload,
+                    ResponsePayload = m.Rest.ResponsePayload
+                },
+                RestSource = m.RestSource == null ? null : new RestConfigDto
+                {
+                    Endpoint = m.RestSource.Endpoint,
+                    Headers = m.RestSource.Headers,
+                    RequestPayload = m.RestSource.RequestPayload,
+                    ResponsePayload = m.RestSource.ResponsePayload
+                },
+                RestDestination = m.RestDestination == null ? null : new RestConfigDto
+                {
+                    Endpoint = m.RestDestination.Endpoint,
+                    Headers = m.RestDestination.Headers,
+                    RequestPayload = m.RestDestination.RequestPayload,
+                    ResponsePayload = m.RestDestination.ResponsePayload
+                }
             };
         }
 
@@ -65,7 +96,7 @@ namespace YourNamespace.Services
                 Operation = dto.Operation,
                 Version = dto.Version,
                 Status = dto.Status ?? "Disabled",
-                LastModified = dto.LastModified ?? DateTime.UtcNow,
+                LastModified = dto.LastModified != default(DateTime) ? dto.LastModified.ToString("yyyy-MM-ddTHH:mm:ssZ") : DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                 Soap = dto.Soap != null ? new RestConfig
                 {
                     Endpoint = dto.Soap.Endpoint,
@@ -111,7 +142,7 @@ namespace YourNamespace.Services
                 Operation = dto.Operation ?? existing.Operation,
                 Version = dto.Version,
                 Status = dto.Status ?? existing.Status,
-                LastModified = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                 Soap = dto.Soap != null ? new RestConfig
                 {
                     Endpoint = dto.Soap.Endpoint,
@@ -155,13 +186,13 @@ namespace YourNamespace.Services
         public async Task<object> SoftDeleteAsync(string id)
         {
             var result = await _repo.SoftDeleteAsync(id);
-            return new { result.Id, result.Status, result.IsDeleted, result.DeletedAt };
+            return new { result.Id, result.Status, result.IsDeleted, DeletedAt = result.DeletedAt };
         }
 
         public async Task<object> RestoreAsync(string id)
         {
             var result = await _repo.RestoreAsync(id);
-            return new { result.Id, result.Status, result.IsDeleted, result.DeletedAt };
+            return new { result.Id, result.Status, result.IsDeleted, DeletedAt = result.DeletedAt };
         }
 
         public async Task CleanupExpiredDeletedMappingsAsync()

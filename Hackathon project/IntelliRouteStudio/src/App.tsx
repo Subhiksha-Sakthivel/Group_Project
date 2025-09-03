@@ -19,6 +19,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import MappingsTable from "./components/mappings/MappingTable";
+import NotificationHistory from "./pages/NotificationHistory";
 
 export default function App() {
   return (
@@ -41,6 +42,9 @@ export default function App() {
             {/* Tables */}
             {/* <Route path="/mappings" element={<BasicTables />} /> */}
             <Route path="/mappings" element={<MappingsTable />} />
+
+            {/* Notifications */}
+            <Route path="/notifications" element={<NotificationHistory />} />
 
             {/* Ui Elements */}
             <Route path="/alerts" element={<Alerts />} />

@@ -39,6 +39,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using YourNamespace.Repositories;
 using YourNamespace.Services;
+using Amazon.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,9 +51,27 @@ bool useMockRepo = configuration.GetValue<bool>("UseMockRepository");
 if (!useMockRepo)
 {
     // AWS DynamoDB configuration (real implementation)
-    builder.Services.AddDefaultAWSOptions(configuration.GetAWSOptions());
-    builder.Services.AddAWSService<IAmazonDynamoDB>();
+    // builder.Services.AddDefaultAWSOptions(configuration.GetAWSOptions());
+    // builder.Services.AddAWSService<IAmazonDynamoDB>();
+    builder.Services.AddSingleton<IAmazonDynamoDB>(sp =>
+    {
+        var localEndpoint = configuration.GetValue<string>("DynamoDB:LocalEndpoint") ?? "http://localhost:8000";
+        var config = new AmazonDynamoDBConfig
+        {
+            ServiceURL = localEndpoint
+        };
+
+        var credentials = new BasicAWSCredentials("fakeMyKeyId", "fakeSecretKey");
+        return new AmazonDynamoDBClient(credentials, config);
+    });
+
     builder.Services.AddSingleton<IMappingRepository, MappingRepository>();
+    
+    // Add DynamoDB initializer service
+    builder.Services.AddSingleton<IDynamoDBInitializerService, DynamoDBInitializerService>();
+    
+    // Add data cleanup service
+    builder.Services.AddSingleton<IDataCleanupService, DataCleanupService>();
 }
 else
 {
@@ -97,6 +116,22 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Initialize DynamoDB if not using mock repository
+if (!useMockRepo)
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var initializer = scope.ServiceProvider.GetRequiredService<IDynamoDBInitializerService>();
+        await initializer.InitializeAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Failed to initialize DynamoDB. Application will continue but may not function properly.");
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

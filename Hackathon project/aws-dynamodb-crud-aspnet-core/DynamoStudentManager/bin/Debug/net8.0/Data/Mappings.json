@@ -4,7 +4,7 @@
     "Operation": "GetCustomers",
     "Version": 2,
     "Status": "Enabled",
-    "LastModified": "2024-01-01T00:00:00Z",
+    "LastModified": "2025-09-01T16:14:47.6201605Z",
     "DeletedAt": null,
     "IsDeleted": false,
     "Soap": {
@@ -142,12 +142,12 @@
     "Operation": "UpdateAccounts",
     "Version": 3,
     "Status": "Ready for Review",
-    "LastModified": "2024-01-01T00:00:00Z",
+    "LastModified": "2025-09-02T14:52:23.7881627Z",
     "DeletedAt": null,
     "IsDeleted": false,
     "Soap": {
       "Endpoint": "https://legacy.example.com/update-accounts",
-      "Headers": "\u003Cheader\u003ESOAP\u003C/header\u003E\n\u003Cheader\u003ESOAP2\u003C/header\u003E",
+      "Headers": "\u003Cheader\u003ESOAP\u003C/header\u003E",
       "RequestPayload": "\u003Crequest\u003EUpdateAccounts\u003C/request\u003E",
       "ResponsePayload": "\u003Cresponse\u003EUpdated\u003C/response\u003E"
     },
@@ -162,12 +162,58 @@
   },
   {
     "Id": "8",
-    "Operation": "CustomOperation",
+    "Operation": "Accounting",
     "Version": 1,
     "Status": "Disabled",
-    "LastModified": "2025-09-01T15:47:26.6714813Z",
-    "DeletedAt": "2025-09-01T15:47:26.6714799Z",
+    "LastModified": "2025-09-02T16:19:27.1131386Z",
+    "DeletedAt": "2025-09-02T16:19:27.1131373Z",
     "IsDeleted": true,
+    "Soap": {
+      "Endpoint": "",
+      "Headers": "",
+      "RequestPayload": "",
+      "ResponsePayload": ""
+    },
+    "Rest": {
+      "Endpoint": "",
+      "Headers": "",
+      "RequestPayload": "",
+      "ResponsePayload": ""
+    },
+    "RestSource": {
+      "Endpoint": "https://source.example.com/api",
+      "Headers": "{ \u0022Source-Auth\u0022: \u0022token123\u0022 }",
+      "RequestPayload": "{ \u0022source\u0022: \u0022data\u0022 }",
+      "ResponsePayload": "{ \u0022source\u0022: \u0022response\u0022 }"
+    },
+    "RestDestination": {
+      "Endpoint": "https://destination.example.com/api",
+      "Headers": "{ \u0022Dest-Auth\u0022: \u0022token456\u0022 }",
+      "RequestPayload": "{ \u0022destination\u0022: \u0022data\u0022 }",
+      "ResponsePayload": "{ \u0022destination\u0022: \u0022response\u0022 }"
+    }
+  },
+  {
+    "Id": "9",
+    "Operation": "NEW",
+    "Version": 4,
+    "Status": "Enabled",
+    "LastModified": "2025-09-02T16:39:39.1220599Z",
+    "DeletedAt": null,
+    "IsDeleted": false,
+    "Soap": null,
+    "Rest": null,
+    "RestSource": null,
+    "RestDestination": null
+  },
+  {
+    "Id": "10",
+    "Operation": "DeleteAccounts",
+    "Version": 1,
+    "Status": "Enabled",
+    "LastModified": "2025-09-02T16:15:05.2007399Z",
+    "DeletedAt": null,
+    "IsDeleted": false,
     "Soap": {
       "Endpoint": "",
       "Headers": "",

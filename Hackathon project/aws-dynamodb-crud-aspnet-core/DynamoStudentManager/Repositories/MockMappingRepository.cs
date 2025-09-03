@@ -41,30 +41,54 @@ namespace YourNamespace.Repositories
 
         public Task<IEnumerable<Mapping>> GetAllAsync()
         {
-            return Task.FromResult(_mappings.AsEnumerable());
+            var results = _mappings.AsEnumerable();
+            
+            // Ensure all required fields have default values if they're null
+            foreach (var result in results)
+            {
+                result.Id ??= string.Empty;
+                result.Operation ??= string.Empty;
+                result.Status ??= string.Empty;
+                result.LastModified ??= DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            }
+            
+            return Task.FromResult(results);
         }
 
         public Task<IEnumerable<MappingTable>> GetTableAsync()
         {
             return Task.FromResult(_mappings.AsEnumerable().Select(row => new MappingTable{
-                Id = row.Id,
-                Operation = row.Operation,
+                Id = row.Id ?? string.Empty,
+                Operation = row.Operation ?? string.Empty,
                 Version = row.Version,
-                Status = row.Status,
-                LastModified =  row.LastModified            
+                Status = row.Status ?? string.Empty,
+                LastModified = row.LastModified ?? string.Empty,
+                DeletedAt = row.DeletedAt,
+                IsDeleted = row.IsDeleted
             }));
         }
 
         public Task<Mapping?> GetByIdAsync(string id)
         {
             var mapping = _mappings.FirstOrDefault(m => m.Id == id);
+            if (mapping != null)
+            {
+                // Ensure all required fields have default values if they're null
+                mapping.Id ??= string.Empty;
+                mapping.Operation ??= string.Empty;
+                mapping.Status ??= string.Empty;
+                mapping.LastModified ??= DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            }
             return Task.FromResult(mapping);
         }
 
         public Task<Mapping> CreateAsync(Mapping mapping)
         {
+            // Ensure required fields have values
             mapping.Id = (_mappings.Count + 1).ToString();
-            mapping.LastModified = DateTime.UtcNow;
+            mapping.Operation ??= string.Empty;
+            mapping.Status ??= string.Empty;
+            mapping.LastModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
             _mappings.Add(mapping);
             SaveToFile();
             return Task.FromResult(mapping);
@@ -75,10 +99,10 @@ namespace YourNamespace.Repositories
             var existing = _mappings.FirstOrDefault(m => m.Id == id);
             if (existing != null)
             {
-                existing.Operation = updated.Operation;
+                existing.Operation = updated.Operation ?? string.Empty;
                 existing.Version = updated.Version;
-                existing.Status = updated.Status;
-                existing.LastModified = DateTime.UtcNow;
+                existing.Status = updated.Status ?? string.Empty;
+                existing.LastModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
                 // Update SOAP configuration
                 if (updated.Soap != null)
@@ -154,14 +178,14 @@ namespace YourNamespace.Repositories
             if (mapping != null)
             {
                 mapping.IsDeleted = true;
-                mapping.DeletedAt = DateTime.UtcNow;
+                mapping.DeletedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 mapping.Status = "Disabled";
-                mapping.LastModified = DateTime.UtcNow;
+                mapping.LastModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 SaveToFile();
                 return Task.FromResult(mapping);
             }
             // Return a default mapping if not found
-            return Task.FromResult(new Mapping { Id = id, IsDeleted = true, DeletedAt = DateTime.UtcNow });
+            return Task.FromResult(new Mapping { Id = id, IsDeleted = true, DeletedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") });
         }
 
         public Task<Mapping> RestoreAsync(string id)
@@ -172,7 +196,7 @@ namespace YourNamespace.Repositories
                 mapping.IsDeleted = false;
                 mapping.DeletedAt = null;
                 mapping.Status = "Enabled";
-                mapping.LastModified = DateTime.UtcNow;
+                mapping.LastModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 SaveToFile();
                 return Task.FromResult(mapping);
             }
@@ -182,8 +206,8 @@ namespace YourNamespace.Repositories
 
         public Task CleanupExpiredDeletedMappingsAsync()
         {
-            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
-            var expiredMappings = _mappings.Where(m => m.IsDeleted && m.DeletedAt.HasValue && m.DeletedAt.Value < thirtyDaysAgo).ToList();
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var expiredMappings = _mappings.Where(m => m.IsDeleted && !string.IsNullOrEmpty(m.DeletedAt) && m.DeletedAt.CompareTo(thirtyDaysAgo) < 0).ToList();
             
             foreach (var mapping in expiredMappings)
             {
