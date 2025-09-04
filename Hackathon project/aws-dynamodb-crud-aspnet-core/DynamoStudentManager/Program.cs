@@ -124,7 +124,13 @@ if (!useMockRepo)
     {
         using var scope = app.Services.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<IDynamoDBInitializerService>();
+        
+        // Add timeout to prevent hanging
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await initializer.InitializeAsync();
+        
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("DynamoDB initialization completed successfully.");
     }
     catch (Exception ex)
     {

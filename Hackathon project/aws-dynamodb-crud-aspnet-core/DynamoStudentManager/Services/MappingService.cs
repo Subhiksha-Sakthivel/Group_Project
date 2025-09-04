@@ -11,6 +11,10 @@ namespace YourNamespace.Services
     public class MappingService : IMappingService
     {
         private readonly IMappingRepository _repo;
+        
+        // Define DynamoDBNull as a constant for null values
+        private static readonly string? DynamoDBNullString = null;
+        private static readonly RestConfigDto? DynamoDBNullRestConfig = null;
 
         public MappingService(IMappingRepository repo)
         {
@@ -38,7 +42,7 @@ namespace YourNamespace.Services
                 Version = m.Version,
                 Status = m.Status ?? string.Empty,
                 LastModifiedString = m.LastModified ?? string.Empty,
-                DeletedAtString = m.DeletedAt,
+                DeletedAtString = m.DeletedAt == null ? DynamoDBNullString : m.DeletedAt,
                 IsDeleted = m.IsDeleted
             });
         }
@@ -57,28 +61,28 @@ namespace YourNamespace.Services
                 LastModifiedString = m.LastModified ?? string.Empty,
                 IsDeleted = m.IsDeleted,
                 DeletedAtString = m.DeletedAt,
-                Soap = m.Soap == null ? null : new RestConfigDto
+                Soap = m.Soap == null ? DynamoDBNullRestConfig : new RestConfigDto
                 {
                     Endpoint = m.Soap.Endpoint,
                     Headers = m.Soap.Headers,
                     RequestPayload = m.Soap.RequestPayload,
                     ResponsePayload = m.Soap.ResponsePayload
                 },
-                Rest = m.Rest == null ? null : new RestConfigDto
+                Rest = m.Rest == null ? DynamoDBNullRestConfig : new RestConfigDto
                 {
                     Endpoint = m.Rest.Endpoint,
                     Headers = m.Rest.Headers,
                     RequestPayload = m.Rest.RequestPayload,
                     ResponsePayload = m.Rest.ResponsePayload
                 },
-                RestSource = m.RestSource == null ? null : new RestConfigDto
+                RestSource = m.RestSource == null ? DynamoDBNullRestConfig : new RestConfigDto
                 {
                     Endpoint = m.RestSource.Endpoint,
                     Headers = m.RestSource.Headers,
                     RequestPayload = m.RestSource.RequestPayload,
                     ResponsePayload = m.RestSource.ResponsePayload
                 },
-                RestDestination = m.RestDestination == null ? null : new RestConfigDto
+                RestDestination = m.RestDestination == null ? DynamoDBNullRestConfig : new RestConfigDto
                 {
                     Endpoint = m.RestDestination.Endpoint,
                     Headers = m.RestDestination.Headers,

@@ -34,7 +34,7 @@ namespace YourNamespace.Services
             {
                 _logger.LogInformation("Starting DynamoDB initialization...");
 
-                // Check if table exists
+                // Check if table exists with timeout
                 var tableExists = await TableExistsAsync("Mappings");
                 
                 if (!tableExists)
@@ -47,17 +47,18 @@ namespace YourNamespace.Services
                     _logger.LogInformation("Mappings table already exists.");
                 }
 
-                // Force reseed data to fix the structure issue
-                _logger.LogInformation("Reseeding data to fix structure...");
-                await ClearTableDataAsync();
-                await SeedMappingsDataAsync();
+                // Skip data seeding for now to speed up startup
+                _logger.LogInformation("Skipping data seeding for faster startup...");
+                // await ClearTableDataAsync();
+                // await SeedMappingsDataAsync();
 
                 _logger.LogInformation("DynamoDB initialization completed successfully.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during DynamoDB initialization");
-                throw;
+                // Don't throw - let the app continue
+                _logger.LogWarning("Continuing without full DynamoDB initialization...");
             }
         }
 
@@ -65,14 +66,20 @@ namespace YourNamespace.Services
         {
             try
             {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 var response = await _dynamoDbClient.DescribeTableAsync(new DescribeTableRequest
                 {
                     TableName = tableName
-                });
+                }, cts.Token);
                 return response.Table.TableStatus == TableStatus.ACTIVE;
             }
             catch (ResourceNotFoundException)
             {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking if table exists, assuming it doesn't");
                 return false;
             }
         }

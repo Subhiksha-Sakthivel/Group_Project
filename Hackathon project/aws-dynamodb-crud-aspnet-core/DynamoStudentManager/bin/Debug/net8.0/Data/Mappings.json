@@ -164,10 +164,10 @@
     "Id": "8",
     "Operation": "Accounting",
     "Version": 1,
-    "Status": "Disabled",
-    "LastModified": "2025-09-02T16:19:27.1131386Z",
-    "DeletedAt": "2025-09-02T16:19:27.1131373Z",
-    "IsDeleted": true,
+    "Status": "Enabled",
+    "LastModified": "2025-09-04T17:01:17Z",
+    "DeletedAt": null,
+    "IsDeleted": false,
     "Soap": {
       "Endpoint": "",
       "Headers": "",
@@ -195,16 +195,36 @@
   },
   {
     "Id": "9",
-    "Operation": "NEW",
+    "Operation": "TrialApiHit",
     "Version": 4,
     "Status": "Enabled",
-    "LastModified": "2025-09-02T16:39:39.1220599Z",
+    "LastModified": "2025-09-04T17:01:56Z",
     "DeletedAt": null,
     "IsDeleted": false,
-    "Soap": null,
-    "Rest": null,
-    "RestSource": null,
-    "RestDestination": null
+    "Soap": {
+      "Endpoint": "",
+      "Headers": "",
+      "RequestPayload": "",
+      "ResponsePayload": ""
+    },
+    "Rest": {
+      "Endpoint": "",
+      "Headers": "",
+      "RequestPayload": "",
+      "ResponsePayload": ""
+    },
+    "RestSource": {
+      "Endpoint": "https://source.example.com/api",
+      "Headers": "{ \u0022Source-Auth\u0022: \u0022token123\u0022 }",
+      "RequestPayload": "{ \u0022source\u0022: \u0022data\u0022 }",
+      "ResponsePayload": "{ \u0022source\u0022: \u0022response\u0022 }"
+    },
+    "RestDestination": {
+      "Endpoint": "https://destination.example.com/api",
+      "Headers": "{ \u0022Dest-Auth\u0022: \u0022token456\u0022 }",
+      "RequestPayload": "{ \u0022destination\u0022: \u0022data\u0022 }",
+      "ResponsePayload": "{ \u0022destination\u0022: \u0022response\u0022 }"
+    }
   },
   {
     "Id": "10",
